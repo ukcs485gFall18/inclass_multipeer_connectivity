@@ -2,13 +2,14 @@
 //  MPCConstants.swift
 //
 //
-//  Created by Corey Baker on 4/11/16.
-//  Copyright © 2016 University of California San Diego - ECE 158B. All rights reserved.
+//  Created by Corey Baker on 10/9/18.
+//  Copyright © 2018 University of Kentucky - CS 485G. All rights reserved.
 //
 
 import Foundation
 
 let kAppName                                            = "mpcchat"
+
 
 // MARK: - SendReceive Dictionary terms
 let kCommunicationsMessageTerm                         = "message"

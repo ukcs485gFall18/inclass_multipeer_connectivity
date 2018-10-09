@@ -1,10 +1,13 @@
 //
 //  MPCManager.swift
 //
-//  Created by Corey Baker on 4/11/16.
-//  Copyright © 2016 University of California San Diego - ECE 158B. All rights reserved.
+//  Created by Corey Baker on 10/9/18.
+//  Copyright © 2018 University of Kentucky - CS 485G. All rights reserved.
 //  
-//  Followed and made additions to original tutorial by Gabriel Theodoropoulos - http://www.appcoda.com/intro-multipeer-connectivity-framework-ios-programming/
+//  Followed and made additions to original tutorial by Gabriel Theodoropoulos
+//  Swift: http://www.appcoda.com/chat-app-swift-tutorial/
+//  Objective C: http://www.appcoda.com/intro-multipeer-connectivity-framework-ios-programming/
+//  MPC documentation: https://developer.apple.com/documentation/multipeerconnectivity
 //
 
 import MultipeerConnectivity
@@ -15,9 +18,9 @@ protocol MPCManagerDelegate {
     
     func lostPeer()
     
-    func invitationWasReceived(fromPeer: String)
+    func invitationWasReceived(_ fromPeer: String, completion: @escaping (_ fromPeer: String, _ accept: Bool) ->Void)
     
-    func connectedWithPeer(peerID: MCPeerID)
+    func connectedWithPeer(_ peerID: MCPeerID)
 }
 
 
@@ -29,7 +32,6 @@ class MPCManager: NSObject, MCSessionDelegate, MCNearbyServiceBrowserDelegate, M
     var browser: MCNearbyServiceBrowser!
     var advertiser: MCNearbyServiceAdvertiser!
     var foundPeers = [MCPeerID]()
-    var invitationHandler: ((Bool, MCSession) ->Void)!
     
     
     override init(){
@@ -37,7 +39,7 @@ class MPCManager: NSObject, MCSessionDelegate, MCNearbyServiceBrowserDelegate, M
         super.init()
         
         //Initialize variables 
-        peer = MCPeerID(displayName: UIDevice.currentDevice().name)
+        peer = MCPeerID(displayName: UIDevice.current.name)
         //session = MCSession(peer: peer, securityIdentity: [myIdentity], encryptionPreference: MCEncryptionPreference.Required)
         session = MCSession(peer: peer)
         session.delegate = self
@@ -52,16 +54,16 @@ class MPCManager: NSObject, MCSessionDelegate, MCNearbyServiceBrowserDelegate, M
     }
     
     //Delagete methods
-    func browser(browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
+    func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
         
         var peerAlreadyInBrowser = false
         
         //TODO: All discover information for a specific peer will be here. Need to pass it to the foundPeer delegate
         //TODO LATER: Implement faster search function to find peers and remove
-        for (index, aPeer) in foundPeers.enumerate()
+        for (index, aPeer) in foundPeers.enumerated()
         {
             if aPeer == peerID{
-                foundPeers.insert(peerID, atIndex: index)
+                foundPeers.insert(peerID, at: index)
                 peerAlreadyInBrowser = true
                 break
             }
@@ -72,17 +74,19 @@ class MPCManager: NSObject, MCSessionDelegate, MCNearbyServiceBrowserDelegate, M
         }
         
         delegate?.foundPeer()
+        
     }
     
-    func browser(browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
-        for (index, aPeer) in foundPeers.enumerate()
+    func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
+        for (index, aPeer) in foundPeers.enumerated()
         {
             if aPeer == peerID{
-                foundPeers.removeAtIndex(index)
+                foundPeers.remove(at: index)
+               
                 let messageDictionary: [String: String] = [kCommunicationsMessageTerm: kCommunicationsLostConnectionTerm]
-                let dataToSend = NSKeyedArchiver.archivedDataWithRootObject(messageDictionary)
-                let dictionary: [String: AnyObject] = [kCommunicationsDataTerm : dataToSend, kCommunicationsFromPeerTerm: aPeer]
-                NSNotificationCenter.defaultCenter().postNotificationName("receivedMPCDisconnectionNotification", object: dictionary)
+                let dataToSend = NSKeyedArchiver.archivedData(withRootObject: messageDictionary)
+                let dictionary: [String: Any] = [kCommunicationsDataTerm : dataToSend, kCommunicationsFromPeerTerm: aPeer]
+                NotificationCenter.default.post(name: NSNotification.Name(rawValue: "receivedMPCDisconnectionNotification"), object: dictionary)
                 break
             }
         }
@@ -90,62 +94,74 @@ class MPCManager: NSObject, MCSessionDelegate, MCNearbyServiceBrowserDelegate, M
         delegate?.lostPeer()
     }
     
-    func browser(browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: NSError) {
+    func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
         print(error.localizedDescription)
     }
     
-    func advertiser(advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: NSData?, invitationHandler: ((Bool, MCSession) -> Void)) {
+    func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping ((Bool, MCSession?) -> Void)) {
         
-        self.invitationHandler = invitationHandler
+        //self.invitationHandler = invitationHandler
         
         //Information user is interested in should be in "withContext" and passed to invitationWasReceived
-        delegate?.invitationWasReceived(peerID.displayName)
+        delegate?.invitationWasReceived(peerID.displayName, completion: {
+            (fromPeer, accept) -> Void in
+            
+            if self.session.connectedPeers.count < kMCSessionMaximumNumberOfPeers{
+                
+                print("I'm accepting(\(accept)) \(fromPeer)'s invitation to connect to session \(String(describing: self.session))")
+                invitationHandler(accept, self.session)
+            }else{
+                print("Warning: Not accepting invite from peer \(fromPeer) reached max session peers allowed(\(kMCSessionMaximumNumberOfPeers))")
+                invitationHandler(false, self.session)
+            }
+        })
     }
     
-    func advertiser(advertiser: MCNearbyServiceAdvertiser, didNotStartAdvertisingPeer error: NSError) {
+    func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didNotStartAdvertisingPeer error: Error) {
         print(error.localizedDescription)
     }
     
-    func session(session: MCSession, peer peerID: MCPeerID, didChangeState state: MCSessionState) {
+    func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
         switch state{
-        case MCSessionState.Connected:
+        case .connected:
             print("Connected to session: \(session)")
             delegate?.connectedWithPeer(peerID)
             
-        case MCSessionState.Connecting:
+        case .connecting:
             print("Connecting to session \(session)")
             
-        case MCSessionState.NotConnected:
+        case .notConnected:
             print("Not connected to session \(session)")
             let messageDictionary: [String: String] = [kCommunicationsMessageTerm: kCommunicationsLostConnectionTerm]
-            let dataToSend = NSKeyedArchiver.archivedDataWithRootObject(messageDictionary)
-            let dictionary: [String: AnyObject] = [kCommunicationsDataTerm : dataToSend, kCommunicationsFromPeerTerm: peerID]
-            NSNotificationCenter.defaultCenter().postNotificationName("receivedMPCChatDataNotification", object: dictionary)
+            let dataToSend = NSKeyedArchiver.archivedData(withRootObject: messageDictionary)
+            let dictionary: [String: Any] = [kCommunicationsDataTerm : dataToSend, kCommunicationsFromPeerTerm: peerID]
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "receivedMPCChatDataNotification"), object: dictionary)
         }
     }
     
-    func session(session: MCSession, didReceiveData data: NSData, fromPeer peerID: MCPeerID) {
+    func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
     
         //REMEMBER: Do not remove the following lines, they are needed to receive Messages from peer
-        let dictionary: [String: AnyObject] = [
+        let dictionary: [String: Any] = [
             kCommunicationsDataTerm: data,
             kCommunicationsFromPeerTerm: peerID]
-        NSNotificationCenter.defaultCenter().postNotificationName("receivedMPCChatDataNotification", object: dictionary)
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "receivedMPCChatDataNotification"), object: dictionary)
     }
     
-    func session(session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, withProgress progress: NSProgress) {
+    func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {
         
     }
     
-    func session(session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, atURL localURL: NSURL, withError error: NSError?) {
+    func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {
         
     }
     
-    func session(session: MCSession, didReceiveStream stream: NSInputStream, withName streamName: String, fromPeer peerID: MCPeerID) {
+    func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {
         
     }
     
-    func session(session: MCSession, didReceiveCertificate certificate: [AnyObject]?, fromPeer peerID: MCPeerID, certificateHandler: ((Bool) -> Void)) {
+    
+    func session(_ session: MCSession, didReceiveCertificate certificate: [Any]?, fromPeer peerID: MCPeerID, certificateHandler: @escaping ((Bool) -> Void)) {
        
         //This is needed if certificates are not implement. Ommitting will not allow MPC to connect
         certificateHandler(true)
@@ -155,11 +171,11 @@ class MPCManager: NSObject, MCSessionDelegate, MCNearbyServiceBrowserDelegate, M
     func sendData(dictionaryWithData dictionary: Dictionary<String,String>, toPeer targetPeer: MCPeerID) -> Bool {
         
         //This is the data that gets sent to peer
-        let dataToSend = NSKeyedArchiver.archivedDataWithRootObject(dictionary)
+        let dataToSend = NSKeyedArchiver.archivedData(withRootObject: dictionary)
         let peersArray = [targetPeer]
         
         do {
-            try session.sendData(dataToSend, toPeers: peersArray, withMode: MCSessionSendDataMode.Reliable)
+            try session.send(dataToSend, toPeers: peersArray, with: MCSessionSendDataMode.reliable)
         }catch let error as NSError {
             
             print(error.localizedDescription)

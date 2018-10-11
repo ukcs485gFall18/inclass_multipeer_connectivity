@@ -197,7 +197,7 @@ class MPCManager: NSObject, MCSessionDelegate, MCNearbyServiceBrowserDelegate, M
         
         let messageDictionary: [String: String] = [kCommunicationsMessageTerm: kCommunicationsLostConnectionTerm]
         let dataToSend = NSKeyedArchiver.archivedData(withRootObject: messageDictionary)
-        let dictionary: [String: Any] = [kCommunicationsDataTerm : dataToSend, kCommunicationsFromPeerTerm: peerID]
+        let dictionary: [String: Any] = [kCommunicationsDataTerm : dataToSend, kCommunicationsFromPeerTerm: peerID.displayName]
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationMPCDisconnetion), object: dictionary)
         
         delegate?.lostPeer()
@@ -242,7 +242,7 @@ class MPCManager: NSObject, MCSessionDelegate, MCNearbyServiceBrowserDelegate, M
             print("Not connected to session \(session)")
             let messageDictionary: [String: String] = [kCommunicationsMessageTerm: kCommunicationsLostConnectionTerm]
             let dataToSend = NSKeyedArchiver.archivedData(withRootObject: messageDictionary)
-            let dictionary: [String: Any] = [kCommunicationsDataTerm : dataToSend, kCommunicationsFromPeerTerm: peerID]
+            let dictionary: [String: Any] = [kCommunicationsDataTerm : dataToSend, kCommunicationsFromPeerTerm: peerID.displayName]
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationMPCDataReceived), object: dictionary)
         }
     }
@@ -252,7 +252,7 @@ class MPCManager: NSObject, MCSessionDelegate, MCNearbyServiceBrowserDelegate, M
         //DO NOT remove the following lines, they are needed to receive Messages from peer
         let dictionary: [String: Any] = [
             kCommunicationsDataTerm: data,
-            kCommunicationsFromPeerTerm: peerID
+            kCommunicationsFromPeerTerm: peerID.displayName
         ]
         
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationMPCDataReceived), object: dictionary)

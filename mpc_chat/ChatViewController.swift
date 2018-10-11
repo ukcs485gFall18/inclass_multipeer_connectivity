@@ -8,7 +8,6 @@
 //  Objective C: http://www.appcoda.com/intro-multipeer-connectivity-framework-ios-programming/
 //
 
-import MultipeerConnectivity
 import UIKit
 
 class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource {
@@ -133,7 +132,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
         
         //Extract the data and the source peer from the received dictionary
         let data = receivedDataDictionary[kCommunicationsDataTerm] as? Data
-        let fromPeer = receivedDataDictionary[kCommunicationsFromPeerTerm] as! MCPeerID
+        let fromPeer = receivedDataDictionary[kCommunicationsFromPeerTerm] as! String
         
         //Convert the data (NSData) into a Dictionary object
         let dataDictionary = NSKeyedUnarchiver.unarchiveObject(with: data!) as! [String:String]
@@ -143,7 +142,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
             
             if message != kCommunicationsEndConnectionTerm  {
                 //Create a new dictioary and ser the sender and the received message to it
-                let messageDictionary: [String: String] = [kCommunicationsSenderTerm: fromPeer.displayName, kCommunicationsMessageTerm: message]
+                let messageDictionary: [String: String] = [kCommunicationsSenderTerm: fromPeer, kCommunicationsMessageTerm: message]
                 
                 messagesArray.append(messageDictionary)
                 
@@ -152,7 +151,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
                     self.updateTableview()
                 })
             }else{
-                let alert = UIAlertController(title: "", message: "\(fromPeer.displayName) ended this chat.", preferredStyle: UIAlertController.Style.alert)
+                let alert = UIAlertController(title: "", message: "\(fromPeer) ended this chat.", preferredStyle: UIAlertController.Style.alert)
                 
                 let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
                     self.appDelegate.mpcManager.disconnect()
@@ -174,7 +173,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
         
         //Extract the data and the source peer from the received dictionary
         let data = receivedDataDictionary[kCommunicationsDataTerm ] as? Data
-        let fromPeer = receivedDataDictionary[kCommunicationsFromPeerTerm] as! MCPeerID
+        let fromPeer = receivedDataDictionary[kCommunicationsFromPeerTerm] as! String
         
         //Convert the data (NSData) into a Dictionary object
         let dataDictionary = NSKeyedUnarchiver.unarchiveObject(with: data!) as! [String:String]
@@ -184,7 +183,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
             
             if message != kCommunicationsLostConnectionTerm  {
                 //Create a new dictioary and ser the sender and the received message to it
-                let messageDictionary: [String: String] = [kCommunicationsSenderTerm: fromPeer.displayName, kCommunicationsMessageTerm: message]
+                let messageDictionary: [String: String] = [kCommunicationsSenderTerm: fromPeer, kCommunicationsMessageTerm: message]
                 
                 messagesArray.append(messageDictionary)
                 
@@ -193,7 +192,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
                     self.updateTableview()
                 })
             }else{
-                let alert = UIAlertController(title: "", message: "Connections was lost with \(fromPeer.displayName)", preferredStyle: UIAlertController.Style.alert)
+                let alert = UIAlertController(title: "", message: "Connections was lost with \(fromPeer)", preferredStyle: UIAlertController.Style.alert)
                 
                 let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
                     self.appDelegate.mpcManager.disconnect()

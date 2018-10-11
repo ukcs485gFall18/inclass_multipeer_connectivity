@@ -35,8 +35,8 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
         tblChat.estimatedRowHeight = 60.0
         tblChat.rowHeight = UITableView.automaticDimension
         
-        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleMPCChatReceivedDataWithNotification(_:)), name: Notification.Name(rawValue: "receivedMPCChatDataNotification"), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleMPCChatReceivedDisconnectionWithNotification(_:)), name: Notification.Name(rawValue: "receivedMPCDisconnectionNotification"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleMPCChatReceivedDataWithNotification(_:)), name: Notification.Name(rawValue: kNotificationMPCDataReceived), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleMPCChatReceivedDisconnectionWithNotification(_:)), name: Notification.Name(rawValue: kNotificationMPCDisconnetion), object: nil)
         
     }
 
@@ -48,12 +48,14 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
     
     // MARK: IBAction method implementation
     
-    @IBAction func endChat(sender: AnyObject) {
+    @IBAction func endChat(_ sender: AnyObject) {
     
         let messageDictionary: [String: String] = [kCommunicationsMessageTerm: kCommunicationsEndConnectionTerm]
-        if appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeer: appDelegate.mpcManager.session.connectedPeers[0] ){
+        let connectedPeers = appDelegate.mpcManager.getPeersConnectedTo()
+        
+        if appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeer: connectedPeers ){
             self.dismiss(animated: true, completion: { () -> Void in
-                self.appDelegate.mpcManager.session.disconnect()
+                print("Disconneced from session")
             })
         }
         
@@ -103,8 +105,9 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
         textField.resignFirstResponder()
         
         let messageDictionary: [String: String] = [kCommunicationsMessageTerm: textField.text!]
+        let connectedPeers = appDelegate.mpcManager.getPeersConnectedTo()
         
-        if appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeer: appDelegate.mpcManager.session.connectedPeers[0] ){
+        if appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeer: connectedPeers ){
             let dictionary: [String: String] = [kCommunicationsSenderTerm: kCommunicationsSelfTerm, kCommunicationsMessageTerm: textField.text!]
             messagesArray.append(dictionary)
             
@@ -152,7 +155,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
                 let alert = UIAlertController(title: "", message: "\(fromPeer.displayName) ended this chat.", preferredStyle: UIAlertController.Style.alert)
                 
                 let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-                    self.appDelegate.mpcManager.session.disconnect()
+                    self.appDelegate.mpcManager.disconnect()
                     self.dismiss(animated: true, completion: nil)
                 }
                 
@@ -193,7 +196,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
                 let alert = UIAlertController(title: "", message: "Connections was lost with \(fromPeer.displayName)", preferredStyle: UIAlertController.Style.alert)
                 
                 let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-                    self.appDelegate.mpcManager.session.disconnect()
+                    self.appDelegate.mpcManager.disconnect()
                     self.dismiss(animated: true, completion: nil)
                 }
                 

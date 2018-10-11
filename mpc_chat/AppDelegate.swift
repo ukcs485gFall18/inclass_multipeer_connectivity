@@ -5,8 +5,14 @@
 //  Created by Corey Baker on 10/9/18.
 //  Copyright © 2018 University of Kentucky - CS 485G. All rights reserved.
 //
+//  Followed and made additions & upgrades to original tutorial by Gabriel Theodoropoulos
+//  Swift: http://www.appcoda.com/chat-app-swift-tutorial/
+//  Objective C: http://www.appcoda.com/intro-multipeer-connectivity-framework-ios-programming/
+//  MPC documentation: https://developer.apple.com/documentation/multipeerconnectivity
+//
 
 import UIKit
+import MultipeerConnectivity
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -18,6 +24,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        
+        //Clear items out for the first run
+        if (UserDefaults.standard.object(forKey: kDefaultsKeyFirstRun) == nil){
+            
+            //Set all default values for first run
+            UserDefaults.standard.setValue(nil, forKey: kPeerID)
+            
+            //This is no longer the first run
+            UserDefaults.standard.setValue(kDefaultsKeyFirstRun, forKey: kDefaultsKeyFirstRun)
+            UserDefaults.standard.synchronize()
+        }
+        
         
         mpcManager = MPCManager()
         return true

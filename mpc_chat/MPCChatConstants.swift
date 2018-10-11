@@ -9,14 +9,20 @@
 import Foundation
 
 let kAppName                                            = "mpcchat"
+let kPeerID                                             = "uniquePeerIDs"
+let kDefaultsKeyFirstRun                                = "FirstRun"
+
+// MARK: - Local notifications
+let kNotificationMPCDisconnetion                        = "receivedMPCDisconnectionNotification"
+let kNotificationMPCDataReceived                        = "receivedMPCChatDataNotification"
 
 
 // MARK: - SendReceive Dictionary terms
-let kCommunicationsMessageTerm                         = "message"
-let kCommunicationsSenderTerm                          = "sender"
-let kCommunicationsSelfTerm                            = "self"
-let kCommunicationsFromPeerTerm                        = "fromPeer"
-let kCommunicationsDataTerm                            = "data"
-let kCommunicationsEndConnectionTerm                   = "_end_chat_"
-let kCommunicationsLostConnectionTerm                  = "_lost_connection_"
+let kCommunicationsMessageTerm                          = "message"
+let kCommunicationsSenderTerm                           = "sender"
+let kCommunicationsSelfTerm                             = "self"
+let kCommunicationsFromPeerTerm                         = "fromPeer"
+let kCommunicationsDataTerm                             = "data"
+let kCommunicationsEndConnectionTerm                    = "_end_chat_"
+let kCommunicationsLostConnectionTerm                   = "_lost_connection_"
 

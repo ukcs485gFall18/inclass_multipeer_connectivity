@@ -203,7 +203,7 @@
 			attributes = {
 				LastSwiftUpdateCheck = 0730;
 				LastUpgradeCheck = 1000;
-				ORGANIZATIONNAME = "University of California San Diego - ECE 158B";
+				ORGANIZATIONNAME = "University of Kentucky - CS 485G";
 				TargetAttributes = {
 					91525B901CBC5CC3008C858E = {
 						CreatedOnToolsVersion = 7.3;

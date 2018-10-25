@@ -19,6 +19,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     @IBOutlet weak var tblPeers: UITableView!
     
+    override func viewWillAppear(_ animated: Bool) {
+        NotificationCenter.default.addObserver(self, selector: #selector(ViewController.handleCoreDataInitializedReceived(_:)), name: Notification.Name(rawValue: kNotificationMPCCoreDataInitialized), object: nil)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view
@@ -28,10 +32,16 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         appDelagate.mpcManager.delegate = self
         
-        NotificationCenter.default.addObserver(self, selector: #selector(ViewController.handleCoreDataInitializedReceived(_:)), name: Notification.Name(rawValue: kNotificationMPCCoreDataInitialized), object: nil)
-        
         // Register cell classes
         tblPeers.register(UITableViewCell.self, forCellReuseIdentifier: "idCellPeer")
+        /*
+        let test = ["Apple":"Computer"]
+        
+        guard let myCompute = test["Apples"] else{
+            return
+        }
+        
+        print("Why do I never get here")*/
     }
     
     override func didReceiveMemoryWarning() {
@@ -180,7 +190,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         //Save data to CoreData
         //Check if the current message is already stored.
         /*
-        let predicate = NSPredicate(format: "\(kAOCDMessageAttrUUID) == %@", alleyOopMessage.uuid)
+        let predicate = NSPredicate(format: "\(peerHash) == %@", Peers)
         
         let fetchRequest:NSFetchRequest<NSFetchRequestResult>
         

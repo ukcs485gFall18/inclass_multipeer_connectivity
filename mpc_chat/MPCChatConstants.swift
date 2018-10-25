@@ -31,3 +31,4 @@ let kCoreDataDBModel                                    = "mpc_chat"
 let kCoreDataDBName                                     = "mpc_chatDB"
 
 let kCoreDataEntityPeers                                = "Peers"
+let kCoreDataPeerAttributePeerHash                      = "peerHash"

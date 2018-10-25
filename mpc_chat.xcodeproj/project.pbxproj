@@ -22,6 +22,8 @@
 		91525BCE1CBC6900008C858E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 91525BCC1CBC6900008C858E /* Main.storyboard */; };
 		918A499D2179020B00B3DE31 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 918A499C2179020B00B3DE31 /* README.md */; };
 		918A49A421791F8D00B3DE31 /* mpc_chat.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 918A49A221791F8D00B3DE31 /* mpc_chat.xcdatamodeld */; };
+		B5FCA0102182611200263882 /* Peers+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5FCA00E2182611200263882 /* Peers+CoreDataClass.swift */; };
+		B5FCA0112182611200263882 /* Peers+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5FCA00F2182611200263882 /* Peers+CoreDataProperties.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +66,9 @@
 		918A499C2179020B00B3DE31 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		918A49A321791F8D00B3DE31 /* mpc_chat.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = mpc_chat.xcdatamodel; sourceTree = "<group>"; };
 		91C042E61CD2D25600DF1BFD /* mpc_chat.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = mpc_chat.entitlements; sourceTree = "<group>"; };
+		B5FCA00D218256B000263882 /* mpc_chat 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "mpc_chat 2.xcdatamodel"; sourceTree = "<group>"; };
+		B5FCA00E2182611200263882 /* Peers+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Peers+CoreDataClass.swift"; sourceTree = "<group>"; };
+		B5FCA00F2182611200263882 /* Peers+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Peers+CoreDataProperties.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +100,8 @@
 			isa = PBXGroup;
 			children = (
 				918A49A221791F8D00B3DE31 /* mpc_chat.xcdatamodeld */,
+				B5FCA00E2182611200263882 /* Peers+CoreDataClass.swift */,
+				B5FCA00F2182611200263882 /* Peers+CoreDataProperties.swift */,
 				9119007D218237F100EB17A9 /* CoreDataManager.swift */,
 			);
 			path = "Supporting Files";
@@ -298,10 +305,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				91525BC91CBC6166008C858E /* MPCChatConstants.swift in Sources */,
+				B5FCA0102182611200263882 /* Peers+CoreDataClass.swift in Sources */,
 				91525BC81CBC6166008C858E /* ViewController.swift in Sources */,
 				91525BCB1CBC6214008C858E /* MPCManager.swift in Sources */,
 				91525BC61CBC6166008C858E /* ChatTableViewCell.swift in Sources */,
 				91525BC71CBC6166008C858E /* ChatViewController.swift in Sources */,
+				B5FCA0112182611200263882 /* Peers+CoreDataProperties.swift in Sources */,
 				911900862182493000EB17A9 /* BrowserTableViewCell.swift in Sources */,
 				918A49A421791F8D00B3DE31 /* mpc_chat.xcdatamodeld in Sources */,
 				9119007E218237F100EB17A9 /* CoreDataManager.swift in Sources */,
@@ -589,9 +598,10 @@
 		918A49A221791F8D00B3DE31 /* mpc_chat.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				B5FCA00D218256B000263882 /* mpc_chat 2.xcdatamodel */,
 				918A49A321791F8D00B3DE31 /* mpc_chat.xcdatamodel */,
 			);
-			currentVersion = 918A49A321791F8D00B3DE31 /* mpc_chat.xcdatamodel */;
+			currentVersion = B5FCA00D218256B000263882 /* mpc_chat 2.xcdatamodel */;
 			path = mpc_chat.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

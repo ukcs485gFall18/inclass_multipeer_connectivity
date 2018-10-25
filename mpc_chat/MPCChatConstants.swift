@@ -15,7 +15,7 @@ let kDefaultsKeyFirstRun                                = "FirstRun"
 // MARK: - Local notifications
 let kNotificationMPCDisconnetion                        = "receivedMPCDisconnectionNotification"
 let kNotificationMPCDataReceived                        = "receivedMPCChatDataNotification"
-
+let kNotificationMPCCoreDataInitialized                 = "coreDataInitializedNotification"
 
 // MARK: - SendReceive Dictionary terms
 let kCommunicationsMessageTerm                          = "message"
@@ -26,3 +26,8 @@ let kCommunicationsDataTerm                             = "data"
 let kCommunicationsEndConnectionTerm                    = "_end_chat_"
 let kCommunicationsLostConnectionTerm                   = "_lost_connection_"
 
+// MARK: - CoreData
+let kCoreDataDBModel                                    = "mpc_chat"
+let kCoreDataDBName                                     = "mpc_chatDB"
+
+let kCoreDataEntityPeers                                = "Peers"

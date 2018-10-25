@@ -20,7 +20,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     
     var mpcManager: MPCManager!
-
+    var coreDataManager:CoreDataManager!
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -36,8 +36,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             UserDefaults.standard.synchronize()
         }
         
+        coreDataManager = CoreDataManager(databaseName: kCoreDataDBName, completionClosure: {
         
-        mpcManager = MPCManager()
+            print("CoreData initialized")
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationMPCCoreDataInitialized), object: nil)
+        })
+        
+        self.mpcManager = MPCManager()
+        
         return true
     }
 

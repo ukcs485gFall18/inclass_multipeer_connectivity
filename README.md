@@ -6,4 +6,5 @@ This is a based off an original turorial by (http://www.appcoda.com/chat-app-swi
 - Unique MCPeerID saved to UserDefaults per Apple's recommendations. This mitigates the issue of phantoms when MultipeerConnectivity is reinitialized
 - MPCManger is completely seperated from the rest of the code
 - Allows max connections for an individual session
+- Uses CoreData to keep track of connected Peers 
 - Much more...

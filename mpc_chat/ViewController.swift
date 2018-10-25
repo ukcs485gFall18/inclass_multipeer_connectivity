@@ -10,11 +10,12 @@
 //
 
 import UIKit
-
+import CoreData
 
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, MPCManagerDelegate {
     
     let appDelagate = UIApplication.shared.delegate as! AppDelegate
+    var isCoreDataAvailable = false
     
     @IBOutlet weak var tblPeers: UITableView!
     
@@ -27,6 +28,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         appDelagate.mpcManager.delegate = self
         
+        NotificationCenter.default.addObserver(self, selector: #selector(ViewController.handleCoreDataInitializedReceived(_:)), name: Notification.Name(rawValue: kNotificationMPCCoreDataInitialized), object: nil)
+        
         // Register cell classes
         tblPeers.register(UITableViewCell.self, forCellReuseIdentifier: "idCellPeer")
     }
@@ -36,6 +39,12 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         // Dispose of any resources that can be recreated.
     }
     
+    @objc func handleCoreDataInitializedReceived(_ notification: NSNotification) {
+        //let receivedDataDictionary = notification.object as! [String: Any]
+        isCoreDataAvailable = true
+        
+        tblPeers.reloadData() //Reload cells to reflect coreData
+    }
     
     // MARK: IBAction method implementation
     
@@ -86,7 +95,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "idCellPeer") as! UITableViewCell
+        
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "idCellPeer") as? BrowserTableViewCell else{
+            return UITableViewCell(style: .default, reuseIdentifier: "idCellPeer")
+        }
         
         let peerHashValue = appDelagate.mpcManager.foundPeerHashValues[indexPath.row]
         
@@ -94,7 +106,25 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             return cell
         }
         
-        cell.textLabel?.text = displayName
+        cell.peerNameLabel.text = displayName
+        
+        if isCoreDataAvailable{
+            //appDelagate.coreDataManager.queryCoreDataMessages(<#T##queryCompoundPredicate: NSCompoundPredicate##NSCompoundPredicate#>, completion: <#T##([Peers]?) -> Void#>)
+            /*
+            let predicate:NSPredicate
+            
+            if uuids == nil{
+                predicate = NSPredicate(format: "\(kAOCDUserAttrUUID) IN %@", [(PFUser.current()! as! Users).uuid])
+            }else{
+                predicate = NSPredicate(format: "\(kAOCDUserAttrUUID) IN %@", uuids!)
+            }
+            
+            let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate])
+            */
+        }else{
+            cell.isPeerLabel.text = "Uknown"
+        }
+        
         
         return cell
     }
@@ -147,6 +177,52 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     func connectedWithPeer(_ peerHash: Int) {
         
+        //Save data to CoreData
+        //Check if the current message is already stored.
+        /*
+        let predicate = NSPredicate(format: "\(kAOCDMessageAttrUUID) == %@", alleyOopMessage.uuid)
+        
+        let fetchRequest:NSFetchRequest<NSFetchRequestResult>
+        
+        if #available(iOS 10.0, *) {
+            
+            fetchRequest = Peers.fetchRequest()
+            
+        } else {
+            // Fallback on earlier versions
+            fetchRequest = NSFetchRequest(entityName: kCoreDataEntityPeers)
+        }
+        
+        fetchRequest.predicate = predicate
+        
+        do {
+            
+            let fetchedEntities = try self.coreDataManager.managedObjectContext.fetch(fetchRequest) as! [Peers]
+            
+            //If object already in the database need to see if the Clound version is newer
+            if fetchedEntities.count > 0{
+                
+            }else{
+                //Must be a new item that needs to be store to the local database
+                let newMessage = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeers, into: self.coreDataManager.managedObjectContext) as! Peers
+            
+                
+                do {
+                    try self.coreDataManager.managedObjectContext.save()
+                    
+                    //completion(true, nil)
+                    return
+                    
+                } catch {
+                    //completion(false, NSError(domain: "Error in SOSMiddleware.storeMessageItemFromAlleyOopMessage. Could not save to database", code: -7, userInfo: nil))
+                    return
+                }
+            }
+        }catch {
+            //completion(false, NSError(domain: "Error in SOSMiddleware.storeMessageItemFromAlleyOopMessage. Could not search database for uuid", code: -7, userInfo: nil))
+            return
+        }
+        */
         OperationQueue.main.addOperation{ () -> Void in
             self.performSegue(withIdentifier: "idSegueChat", sender: self)
         }

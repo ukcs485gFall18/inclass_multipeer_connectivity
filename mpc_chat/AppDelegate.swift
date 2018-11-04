@@ -21,6 +21,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     var mpcManager: MPCManager!
     var coreDataManager:CoreDataManager!
+    var isCoreDataAvailable = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -39,7 +40,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         coreDataManager = CoreDataManager(databaseName: kCoreDataDBName, completionClosure: {
         
             print("CoreData initialized")
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationMPCCoreDataInitialized), object: nil)
+            self.isCoreDataAvailable = true
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
         })
         
         self.mpcManager = MPCManager()

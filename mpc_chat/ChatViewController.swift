@@ -10,19 +10,47 @@
 
 import UIKit
 
-class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource {
+class ChatViewController: UIViewController {
     
-    var messagesArray: [[String:String]] = []
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
+    var messagesArray = [[String:String]]()
+    var messagesToDisplay = [Message]()
+    let model = ChatModel()
+    var room: Room?
+    var isConnected = false
+    var myPeerHash = -1
 
     @IBOutlet weak var txtChat: UITextField!
     @IBOutlet weak var tblChat: UITableView!
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        if room == nil{
+            print("Error in CharViewController, room == nil")
+            self.dismiss(animated: true, completion: nil)
+            return
+        }
+        
+        model.getAllMessagesFrom(room!, completion: {
+            (messagesFound) -> Void in
+            
+            guard let messages = messagesFound else{
+                return
+            }
+            
+            messagesToDisplay = messages
+            tblChat.reloadData()
+        })
+        
+        myPeerHash = appDelegate.mpcManager.getMyPeerInfo().0
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
+        appDelegate.mpcManager.messageDelegate = self
         tblChat.delegate = self
         tblChat.dataSource = self
         
@@ -34,8 +62,8 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
         tblChat.estimatedRowHeight = 60.0
         tblChat.rowHeight = UITableView.automaticDimension
         
-        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleMPCChatReceivedDataWithNotification(_:)), name: Notification.Name(rawValue: kNotificationMPCDataReceived), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleMPCChatReceivedDisconnectionWithNotification(_:)), name: Notification.Name(rawValue: kNotificationMPCDisconnetion), object: nil)
+        //NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleMPCChatReceivedDataWithNotification(_:)), name: Notification.Name(rawValue: kNotificationMPCDataReceived), object: nil)
+        //NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleMPCChatReceivedDisconnectionWithNotification(_:)), name: Notification.Name(rawValue: kNotificationMPCDisconnetion), object: nil)
         
     }
 
@@ -46,77 +74,26 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
     
     
     // MARK: IBAction method implementation
-    
     @IBAction func endChat(_ sender: AnyObject) {
     
-        let messageDictionary: [String: String] = [kCommunicationsMessageTerm: kCommunicationsEndConnectionTerm]
+        let messageDictionary: [String: String] = [kCommunicationsMessageContentTerm: kCommunicationsEndConnectionTerm]
         let connectedPeers = appDelegate.mpcManager.getPeersConnectedTo()
         
-        if appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeer: connectedPeers ){
+        if appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
+            
+            //Give some time for connectedPeer to receive disconnect info
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
+                self.appDelegate.mpcManager.disconnect()
+            })
+            
             self.dismiss(animated: true, completion: { () -> Void in
                 print("Disconneced from session")
             })
-        }
-        
-    }
-    
-    
-    // MARK: UITableView related method implementation
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
-        return 1
-    }
-    
-    
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return messagesArray.count;
-    }
-    
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "idCell") as! ChatTableViewCell
-
-        let currentMessage = messagesArray[indexPath.row] as Dictionary<String, String>
-        
-        if let sender = currentMessage[kCommunicationsSenderTerm] {
-            var senderLabelText: String
-            var senderColor: UIColor
             
-            if sender == kCommunicationsSelfTerm{
-                senderLabelText = "I said:"
-                senderColor = UIColor.purple
-            }else{
-                senderLabelText = sender + " said:"
-                senderColor = UIColor.orange
-            }
-            
-            cell.nameLabel?.text = senderLabelText
-            cell.nameLabel?.textColor = senderColor
-        }
-        
-        if let message = currentMessage[kCommunicationsMessageTerm]{
-            cell.messageLabel?.text = message
-        }
-        
-        return cell
-    }
-    
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        
-        let messageDictionary: [String: String] = [kCommunicationsMessageTerm: textField.text!]
-        let connectedPeers = appDelegate.mpcManager.getPeersConnectedTo()
-        
-        if appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeer: connectedPeers ){
-            let dictionary: [String: String] = [kCommunicationsSenderTerm: kCommunicationsSelfTerm, kCommunicationsMessageTerm: textField.text!]
-            messagesArray.append(dictionary)
-            
-            self.updateTableview()
         }else{
-            print("Could not send data")
+            print("Couldn't send diconnect, try again")
         }
         
-        textField.text = ""
-        return true
     }
     
     func updateTableview(){
@@ -126,7 +103,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
             tblChat.scrollToRow(at: NSIndexPath(row: messagesArray.count - 1, section: 0) as IndexPath, at: UITableView.ScrollPosition.bottom, animated: true)
         }
     }
-    
+    /*
     @objc func handleMPCChatReceivedDataWithNotification(_ notification: NSNotification) {
         let receivedDataDictionary = notification.object as! Dictionary<String, AnyObject>
         
@@ -137,12 +114,12 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
         //Convert the data (NSData) into a Dictionary object
         let dataDictionary = NSKeyedUnarchiver.unarchiveObject(with: data!) as! [String:String]
         
-        //Check if there's an entry with the kCommunicationsMessageTerm key
-        if let message = dataDictionary[kCommunicationsMessageTerm]{
+        //Check if there's an entry with the kCommunicationsMessageContentTerm key
+        if let message = dataDictionary[kCommunicationsMessageContentTerm]{
             
             if message != kCommunicationsEndConnectionTerm  {
                 //Create a new dictioary and ser the sender and the received message to it
-                let messageDictionary: [String: String] = [kCommunicationsSenderTerm: fromPeer, kCommunicationsMessageTerm: message]
+                let messageDictionary: [String: String] = [kCommunicationsSenderTerm: fromPeer, kCommunicationsMessageContentTerm: message]
                 
                 messagesArray.append(messageDictionary)
                 
@@ -178,12 +155,12 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
         //Convert the data (NSData) into a Dictionary object
         let dataDictionary = NSKeyedUnarchiver.unarchiveObject(with: data!) as! [String:String]
         
-        //Check if there's an entry with the kCommunicationsMessageTerm key
-        if let message = dataDictionary[kCommunicationsMessageTerm]{
+        //Check if there's an entry with the kCommunicationsMessageContentTerm key
+        if let message = dataDictionary[kCommunicationsMessageContentTerm]{
             
             if message != kCommunicationsLostConnectionTerm  {
                 //Create a new dictioary and ser the sender and the received message to it
-                let messageDictionary: [String: String] = [kCommunicationsSenderTerm: fromPeer, kCommunicationsMessageTerm: message]
+                let messageDictionary: [String: String] = [kCommunicationsSenderTerm: fromPeer, kCommunicationsMessageContentTerm: message]
                 
                 messagesArray.append(messageDictionary)
                 
@@ -196,6 +173,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
                 
                 let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
                     self.appDelegate.mpcManager.disconnect()
+                    self.appDelegate.coreDataManager.saveContext()
                     self.dismiss(animated: true, completion: nil)
                 }
                 
@@ -207,6 +185,159 @@ class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDele
             }
         }
     }
+    */
+}
+
+extension ChatViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        
+        guard let thisRoom = room else{
+            return true
+        }
+        
+        model.storeNewMessage(content: textField.text!, fromPeer: myPeerHash, inRoom: thisRoom, completion: {
+            (messageStored) -> Void in
+            
+            guard let message = messageStored else{
+                return
+            }
+            
+            let messageDictionary: [String: String] = [
+                kCommunicationsMessageContentTerm: textField.text!,
+                kCommunicationsMessageUUIDTerm: message.uuid
+            ]
+            
+            messagesToDisplay.append(message)
+            self.updateTableview()
+            
+            let connectedPeers = appDelegate.mpcManager.getPeersConnectedTo()
+            
+            if appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
+                
+                print("Sent message \(message.content) to room \(thisRoom.name)")
+                
+            }else{
+                print("Couldn't send message \(message.content) to room \(thisRoom.name)")
+            }
+        })
+        
+        //Update text field with nothing
+        textField.text = ""
+        return true
+        
+    }
+}
+
+extension ChatViewController: MPCManagerMessageDelegate {
     
+    func lostPeer(_ peerHash: Int, peerName: String) {
+        
+        let alert = UIAlertController(title: "", message: "Connections was lost with \(peerName)", preferredStyle: UIAlertController.Style.alert)
+        
+        let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
+            _ = self.model.save()
+            self.dismiss(animated: true, completion: nil)
+        }
+        
+        alert.addAction(doneAction)
+        
+        OperationQueue.main.addOperation({ () -> Void in
+            self.present(alert, animated: true, completion: nil)
+        })
+    }
     
+    func messageReceived(_ fromPeerHash:Int, data: Data) {
+        
+        guard let fromPeer = appDelegate.mpcManager.getPeerDisplayName(fromPeerHash) else{
+            return
+        }
+        
+        //Convert the data (Data) into a Dictionary object
+        let dataDictionary = NSKeyedUnarchiver.unarchiveObject(with: data) as! [String:String]
+        
+        //Check if there's an entry with the kCommunicationsMessageContentTerm key
+        guard let message = dataDictionary[kCommunicationsMessageContentTerm] else{
+            return
+        }
+        
+        if message != kCommunicationsEndConnectionTerm  {
+            
+            guard let thisRoom = room else{
+                print("Error: this Chat doesn't have a room, this should never happen")
+                return
+            }
+            
+            guard let uuid = dataDictionary[kCommunicationsMessageUUIDTerm] else{
+                print("Error: received messaged is lacking UUID")
+                return
+            }
+            
+            model.storeNewMessage(uuid, content: message, fromPeer: fromPeerHash, inRoom: thisRoom, completion: {
+                (messageReceived) -> Void in
+                
+                guard let message = messageReceived else{
+                    return
+                }
+                
+                messagesToDisplay.append(message)
+                
+                //Reload the tableview data and scroll to the bottom using the main thread
+                OperationQueue.main.addOperation({ () -> Void in
+                    self.updateTableview()
+                })
+            })
+            
+        }else{
+            //fromPeer want's to disconnect
+            let alert = UIAlertController(title: "", message: "\(fromPeer) ended this chat.", preferredStyle: UIAlertController.Style.alert)
+            
+            let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
+                self.dismiss(animated: true, completion: nil)
+            }
+            
+            alert.addAction(doneAction)
+            
+            OperationQueue.main.addOperation({ () -> Void in
+                self.present(alert, animated: true, completion: nil)
+            })
+        }
+    }
+    
+}
+
+// MARK: UITableView related method implementation
+extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
+    
+    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+        return 1
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        
+        return messagesToDisplay.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "idCell") as! ChatTableViewCell
+        
+        let message = messagesToDisplay[indexPath.row]
+        
+        var senderLabelText: String
+        var senderColor: UIColor
+        
+        if message.owner.peerHash == myPeerHash{
+            senderLabelText = "I said:"
+            senderColor = UIColor.purple
+        }else{
+            senderLabelText = message.owner.peerName + " said:"
+            senderColor = UIColor.orange
+        }
+        
+        cell.nameLabel?.text = senderLabelText
+        cell.nameLabel?.textColor = senderColor
+        cell.messageLabel?.text = message.content
+        
+        return cell
+    }
 }

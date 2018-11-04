@@ -10,18 +10,29 @@ import UIKit
 
 class BrowserTableViewCell: UITableViewCell {
 
+    @IBOutlet weak var peerNameLabel: UILabel!
+    @IBOutlet weak var isPeerLabel: UILabel!
+    @IBOutlet weak var lastConnectedLabel: UILabel!
+    @IBOutlet weak var lastSeenLabel: UILabel!
+    
+    var peerHash = -1
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         // Initialization code
+
     }
-    @IBOutlet weak var peerNameLabel: UILabel!
-    @IBOutlet weak var isPeerLabel: UILabel!
-    
     
     override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
 
-        // Configure the view for the selected state
+        if isSelected{
+            // Configure the view for the selected state
+            let info: [String:Any] = [kBrowserPeerHashTerm: peerHash]
+            let notification = Notification(name: .init(kNotificationBrowserUserTappedCell), object: info, userInfo: nil)
+            
+            NotificationCenter.default.post(notification)
+        }
     }
 
 }

@@ -12,23 +12,56 @@ let kAppName                                            = "mpcchat"
 let kPeerID                                             = "uniquePeerIDs"
 let kDefaultsKeyFirstRun                                = "FirstRun"
 
+// MARK: - Segues
+let kSegueChat                                          = "idSegueChat"
+
 // MARK: - Local notifications
-let kNotificationMPCDisconnetion                        = "receivedMPCDisconnectionNotification"
-let kNotificationMPCDataReceived                        = "receivedMPCChatDataNotification"
-let kNotificationMPCCoreDataInitialized                 = "coreDataInitializedNotification"
+//let kNotificationMPCDisconnetion                        = "receivedMPCDisconnectionNotification"
+//let kNotificationMPCDataReceived                        = "receivedMPCChatDataNotification"
+let kNotificationMPCIsInitialized                       = "mpcIsInitializedNotification"
+let kNotificationCoreDataInitialized                    = "coreDataInitializedNotification"
+let kNotificationBrowserUserTappedCell                  = "browserUserTappedCell"
 
 // MARK: - SendReceive Dictionary terms
-let kCommunicationsMessageTerm                          = "message"
-let kCommunicationsSenderTerm                           = "sender"
+let kCommunicationsMessageContentTerm                   = "message"
+//let kCommunicationsSenderTerm                           = "sender"
+let kCommunicationsMessageUUIDTerm                      = "uuid"
 let kCommunicationsSelfTerm                             = "self"
 let kCommunicationsFromPeerTerm                         = "fromPeer"
 let kCommunicationsDataTerm                             = "data"
 let kCommunicationsEndConnectionTerm                    = "_end_chat_"
 let kCommunicationsLostConnectionTerm                   = "_lost_connection_"
 
+// MARK: - Browser UI Dictionary terms
+let kBrowserPeerHashTerm                                = "peerHash"
+let kBrowserPeerRoomUUID                                = "roomUUID"
+let kBrowserPeerRoomName                                = "roomName"
+
 // MARK: - CoreData
 let kCoreDataDBModel                                    = "mpc_chat"
 let kCoreDataDBName                                     = "mpc_chatDB"
 
-let kCoreDataEntityPeers                                = "Peers"
+let kCoreDataEntityPeer                                 = "Peer"
+let kCoreDataPeerAttributeCreatedAt                     = "createdAt"
+let kCoreDataPeerAttributeModifiedAt                    = "modifiedAt"
 let kCoreDataPeerAttributePeerHash                      = "peerHash"
+let kCoreDataPeerAttributePeerName                      = "peerName"
+let kCoreDataPeerAttributeLastConnected                 = "lastConnected"
+let kCoreDataPeerAttributeLastSeen                      = "lastSeen"
+
+let kCoreDataEntityRoom                                 = "Room"
+let kCoreDataRoomAttributeCreatedAt                     = "createdAt"
+let kCoreDataRoomAttributeModifiedAt                    = "modifiedAt"
+let kCoreDataRoomAttributeName                          = "name"
+let kCoreDataRoomAttributeUUID                          = "uuid"
+let kCoreDataRoomAttributeMessages                      = "messages"
+let kCoreDataRoomAttributeOwner                         = "owner"
+let kCoreDataRoomAttributePeers                         = "peers"
+
+let kCoreDataEntityMessage                              = "Message"
+let kCoreDataMessageAttributeCreatedAt                  = "createdAt"
+let kCoreDataMessageAttributeModifiedAt                 = "modifiedAt"
+let kCoreDataMessageAttributeContent                    = "content"
+let kCoreDataMessageAttributeRoom                       = "room"
+let kCoreDataMessageAttributeOwner                      = "owner"
+let kCoreDataMessageAttributeUUID                       = "uuid"

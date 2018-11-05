@@ -27,12 +27,19 @@ public class Room: NSManagedObject {
         modifiedAt = MPCChatUtility.getCurrentTime()
     }
     
-    func createNew(_ roomName: String, owner: Peer) -> (){
-        self.uuid = UUID.init().uuidString
+    func createNew(_ roomUUID:String?=nil, roomName: String, owner: Peer) -> (){
+    
         self.owner = owner
         
         created()
         updated(roomName)
+        
+        guard let thisUUID = roomUUID else{
+            self.uuid = UUID.init().uuidString
+            return
+        }
+        
+        self.uuid  = thisUUID
     }
     
     func updated(_ roomName:String)-> (){

@@ -15,6 +15,7 @@ class BrowserModel: NSObject{
     var peerUUIDHash = [String:Int]()
     var peerHashUUID = [Int:String]()
     let appDelagate = UIApplication.shared.delegate as! AppDelegate
+    var thisPeer:Peer!
     
     var getPeersFoundUUIDs:[String]{
         get{
@@ -26,7 +27,6 @@ class BrowserModel: NSObject{
         super.init()
         
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
-        
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
     }
     
@@ -77,7 +77,7 @@ class BrowserModel: NSObject{
             //Note: Should only receive 1 peer here, if you have more than you saving stuff incorrectly.
             guard let peer = peers.first else{
                 
-                //If there are 0 found, this is must be a new item that needs to be store to the local database
+                //If there are 0 found, this must be a new item that needs to be stored to the local database
                 let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: appDelagate.coreDataManager.managedObjectContext) as! Peer
                 
                 newPeer.createNew(peerUUID, peerName: peerName, connected: isConnectedToPeer)
@@ -113,11 +113,12 @@ class BrowserModel: NSObject{
         storeNewPeer(peerUUID: myPeerUUID, peerName: myPeerName, isConnectedToPeer: false, completion: {
             (storedPeer) -> Void in
             
-            guard let _ = storedPeer else{
+            guard let peer = storedPeer else{
                 print("Error in saving myself to CoreData")
                 return
             }
             
+            self.thisPeer = peer //Keep myself available for the life of the model
             print("Saved my info to CoreData")
         
         })
@@ -191,39 +192,16 @@ class BrowserModel: NSObject{
     
     func findOldChatRooms(_ ownerUUID: String, peerToJoinUUID: String, completion : (_ room:[Room]?) -> ()){
         
-        findPeers([ownerUUID, peerToJoinUUID], completion: {
+        findPeers([peerToJoinUUID], completion: {
             (peersFound) -> Void in
             
-            guard let peers = peersFound else{
+            guard let peer = peersFound?.first else{
                 discard()
                 completion(nil)
                 return
             }
             
-            var owner:Peer?
-            var peerToJoin:Peer?
-            
-            //Owner has to be one of the peers found, peerToJoin has to be the other.
-            //The other way to do this is search for each individually...
-            for peer in peers{
-                if peer.peerUUID == appDelagate.peerUUID{
-                    owner = peer
-                }else{
-                    peerToJoin = peer
-                }
-            }
-            
-            guard let foundOwner = owner else{
-                completion(nil)
-                return
-            }
-            
-            guard let foundPeerToJoin = peerToJoin else{
-                completion(nil)
-                return
-            }
-            
-            findRooms(foundOwner, withPeer: foundPeerToJoin, completion: {
+            findRooms(self.thisPeer, withPeer: peer, completion: {
                 (roomsFound) -> Void in
                 
                 //ToDo: How do you modify this to return all rooms found related to the users?
@@ -242,44 +220,11 @@ class BrowserModel: NSObject{
         
         let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: appDelagate.coreDataManager.managedObjectContext) as! Room
         
-        findPeers([ownerUUID, peerToJoinUUID], completion: {
+        findPeers([peerToJoinUUID], completion: {
             (peersFound) -> Void in
             
-            guard let peers = peersFound else{
-                discard()
-                completion(nil)
-                return
-            }
-            
-            var owner:Peer?
-            //Owner has to be one of the peers found
-            for peer in peers{
-                if peer.peerUUID == appDelagate.peerUUID{
-                    owner = peer
-                    break
-                }
-            }
-            
-            guard let foundOwner = owner else{
-                discard()
-                completion(nil)
-                return
-            }
-            
-            //Found all the peers needed, can save and move on
-            if peers.count == 2{
-                newRoom.createNew(roomName, owner: foundOwner)
-                newRoom.addToPeers(Set(peers.map { $0 }))
+            guard let peer = peersFound?.first else{
                 
-                if save(){
-                    completion(newRoom)
-                }else{
-                    print("Could not save newEntity for Room - \(roomName), with owner - \(ownerUUID)")
-                    discard()
-                    completion(nil)
-                }
-               
-            }else{
                 //The peer we are trying to add isn't in CoreData
                 guard let peerHash = peerUUIDHash[peerToJoinUUID] else{
                     discard()
@@ -302,19 +247,33 @@ class BrowserModel: NSObject{
                         return
                     }
                     
-                    newRoom.createNew(roomName, owner: foundOwner)
-                    newRoom.addToPeers(foundOwner)
+                    newRoom.createNew(roomName: roomName, owner: self.thisPeer)
+                    newRoom.addToPeers(self.thisPeer)
                     newRoom.addToPeers(peer)
                     
                     if save(){
                         completion(newRoom)
                     }else{
-                        print("Could not save newEntity for Room - \(roomName), with owner - \(ownerUUID)")
+                        print("Could not save newEntity for Room - \(roomName), with owner - \(self.thisPeer.peerUUID)")
                         discard()
                         completion(nil)
                     }
                 })
+                return
             }
+            
+            //Found all the peers needed, can save and move on
+            newRoom.createNew(roomName: roomName, owner: self.thisPeer)
+            newRoom.addToPeers(Set([self.thisPeer,peer]))
+            
+            if save(){
+                completion(newRoom)
+            }else{
+                print("Could not save newEntity for Room - \(roomName), with owner - \(self.thisPeer.peerUUID)")
+                discard()
+                completion(nil)
+            }
+            
         })
     }
     
@@ -330,19 +289,22 @@ class BrowserModel: NSObject{
             }
             
             guard let oldRoom = rooms.first else{
-                //If no room found, create a new room
+                
+                //If no room found, create a new room with the received roomUUID
                 let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: appDelagate.coreDataManager.managedObjectContext) as! Room
                 
+                //Get the owner as a Peer
                 findPeers([ownerUUID], completion: {
                     (peersFound) -> Void in
                     
                     guard let peer = peersFound?.first else{
-                        //If this peer has never been saved before, need to save
+                        //If this owner has never been saved before, need to save
                         let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: appDelagate.coreDataManager.managedObjectContext) as! Peer
                         
                         newPeer.createNew(ownerUUID, peerName: ownerName, connected: false)
-                        newRoom.createNew(roomName, owner: newPeer)
+                        newRoom.createNew(roomUUID, roomName: roomName, owner: newPeer)
                         newRoom.addToPeers(newPeer)
+                        newRoom.addToPeers(self.thisPeer)
                         
                         if save(){
                             completion(newRoom)
@@ -355,9 +317,10 @@ class BrowserModel: NSObject{
                         return
                     }
                     
-                    //We've see this peer before, just need a new room
-                    newRoom.createNew(roomName, owner: peer)
+                    //We've seen this peer before, just need a new room
+                    newRoom.createNew(roomUUID, roomName: roomName, owner: peer)
                     newRoom.addToPeers(peer)
+                    newRoom.addToPeers(self.thisPeer)
                     
                     if save(){
                         completion(newRoom)
@@ -373,12 +336,12 @@ class BrowserModel: NSObject{
                 (peersFound) -> Void in
                 
                 guard let peer = peersFound?.first else{
-                    //If this peer has never been saved before, need to save
+                    //If this peer has never been saved before, need to save to old room
                     let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: appDelagate.coreDataManager.managedObjectContext) as! Peer
                     
                     newPeer.createNew(ownerUUID, peerName: ownerName, connected: false)
-                    oldRoom.createNew(roomName, owner: newPeer)
                     oldRoom.addToPeers(newPeer)
+                    oldRoom.addToPeers(self.thisPeer)
                     
                     if save(){
                         completion(oldRoom)
@@ -391,6 +354,7 @@ class BrowserModel: NSObject{
                 
                 //We've see this peer before, make sure they are added to the old room
                 oldRoom.addToPeers(peer)
+                oldRoom.addToPeers(self.thisPeer)
                 completion(oldRoom)
             })
 

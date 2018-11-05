@@ -86,7 +86,7 @@ class BrowserViewController: UIViewController {
                     let createOldRoomAction: UIAlertAction = UIAlertAction(title: actionTitle, style: UIAlertAction.Style.default) {
                         (alertAction) -> Void in
                         
-                        self.roomToJoin = room
+                        self.roomToJoin = room //Set the room to join to help preperation of segue
                         
                         //Build invite information to send to user
                         let info = [

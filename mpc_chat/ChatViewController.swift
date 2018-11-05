@@ -281,6 +281,7 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
             senderColor = UIColor.orange
         }
         
+        cell.timeLabel?.text = MPCChatUtility.getRelativeTime(message.createdAt!)
         cell.nameLabel?.text = senderLabelText
         cell.nameLabel?.textColor = senderColor
         cell.messageLabel?.text = message.content

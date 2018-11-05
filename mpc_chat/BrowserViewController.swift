@@ -344,7 +344,7 @@ extension BrowserViewController: UITableViewDelegate, UITableViewDataSource{
             }
             
             cell.isPeerLabel?.text = "Peer"
-            cell.lastSeenLabel?.text = lastSeenPeer.description
+            cell.lastSeenLabel?.text = MPCChatUtility.getRelativeTime(lastSeenPeer)
             
             guard let lastConnectedPeer = lastConnected else{
                 cell.lastConnectedLabel?.text = "N/A"

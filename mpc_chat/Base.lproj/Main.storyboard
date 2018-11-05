@@ -181,6 +181,18 @@
                                             <action selector="endChat:" destination="vpC-FC-MdX" id="A3i-Wx-u4o"/>
                                         </connections>
                                     </barButtonItem>
+                                    <barButtonItem style="plain" id="jnY-Mf-T7I">
+                                        <textField key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="center" adjustsFontForContentSizeCategory="YES" minimumFontSize="17" id="sCz-Bb-QPy">
+                                            <rect key="frame" x="37" y="7" width="322" height="30"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                            <nil key="textColor"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                            <textInputTraits key="textInputTraits" enablesReturnKeyAutomatically="YES"/>
+                                            <connections>
+                                                <action selector="userChangedRoomName:" destination="vpC-FC-MdX" eventType="editingDidEnd" id="Bja-DE-Lk0"/>
+                                            </connections>
+                                        </textField>
+                                    </barButtonItem>
                                 </items>
                             </toolbar>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" translatesAutoresizingMaskIntoConstraints="NO" id="EPR-X0-cY4">
@@ -195,7 +207,7 @@
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Title" lineBreakMode="wordWrap" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="sml-U5-PHB">
-                                                    <rect key="frame" x="24" y="0.0" width="343" height="19.5"/>
+                                                    <rect key="frame" x="24" y="0.0" width="343" height="20"/>
                                                     <constraints>
                                                         <constraint firstAttribute="height" constant="21" id="QxK-VD-vtk"/>
                                                     </constraints>
@@ -212,7 +224,7 @@
                                                     </variation>
                                                 </label>
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" text="Detail" lineBreakMode="wordWrap" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="aWu-Lg-aJc">
-                                                    <rect key="frame" x="24" y="19.5" width="343" height="23"/>
+                                                    <rect key="frame" x="24" y="20" width="343" height="22.5"/>
                                                     <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                     <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                     <nil key="highlightedColor"/>
@@ -389,13 +401,14 @@
                         </variation>
                     </view>
                     <connections>
+                        <outlet property="roomNameTextField" destination="sCz-Bb-QPy" id="GEo-jI-n3d"/>
                         <outlet property="tblChat" destination="EPR-X0-cY4" id="blk-n2-nUR"/>
                         <outlet property="txtChat" destination="sJQ-gp-w8U" id="NaN-MH-4Er"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="4o8-ud-Jw1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1059" y="432"/>
+            <point key="canvasLocation" x="1058.4000000000001" y="431.33433283358323"/>
         </scene>
     </scenes>
 </document>

@@ -19,6 +19,7 @@ class ChatViewController: UIViewController {
     var room: Room?
     var isConnected = false
 
+    @IBOutlet weak var roomNameTextField: UITextField!
     @IBOutlet weak var txtChat: UITextField!
     @IBOutlet weak var tblChat: UITableView!
 
@@ -42,6 +43,9 @@ class ChatViewController: UIViewController {
             tblChat.reloadData()
         })
         
+        roomNameTextField.text = room!.name
+        //ToDo: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
+        roomNameTextField.isEnabled = true
     }
     
     override func viewDidLoad() {
@@ -60,6 +64,7 @@ class ChatViewController: UIViewController {
         tblChat.estimatedRowHeight = 60.0
         tblChat.rowHeight = UITableView.automaticDimension
         
+        self.hideKeyboardWhenTappedAround()
     }
 
     override func didReceiveMemoryWarning() {
@@ -67,6 +72,14 @@ class ChatViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
+    
+    @IBAction func userChangedRoomName(_ sender: Any) {
+        
+        //User changed room name
+        if roomNameTextField.text! != room!.name{
+            model.changeRoomName(room!, toNewName: roomNameTextField.text!)
+        }
+    }
     
     // MARK: IBAction method implementation
     @IBAction func endChat(_ sender: AnyObject) {
@@ -273,5 +286,18 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
         cell.messageLabel?.text = message.content
         
         return cell
+    }
+}
+
+// Got this code from: https://stackoverflow.com/questions/24126678/close-ios-keyboard-by-touching-anywhere-using-swift
+extension UIViewController {
+    func hideKeyboardWhenTappedAround() {
+        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+    }
+    
+    @objc func dismissKeyboard() {
+        view.endEditing(true)
     }
 }

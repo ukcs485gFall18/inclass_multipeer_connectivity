@@ -133,6 +133,19 @@ class ChatModel: NSObject{
         })
     }
     
+    func changeRoomName(_ room:Room, toNewName name:String) ->(){
+        
+        //ToDo: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
+        let oldRoomName = room.name
+        room.name = name
+        
+        if save(){
+            print("Successfully changed room name from \(oldRoomName) to \(room.name)")
+        }else{
+            print("Could not save changes of room name")
+        }
+    }
+    
     func storeNewMessage(_ uuid: String?=nil, content: String, fromPeer: String, inRoom room: Room, completion : (_ rooms:Message?) -> ()){
         
         //Find peer in CoreData

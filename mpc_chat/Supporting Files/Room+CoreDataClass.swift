@@ -30,7 +30,8 @@ public class Room: NSManagedObject {
     func createNew(_ roomUUID:String?=nil, roomName: String, owner: Peer) -> (){
     
         self.owner = owner
-        
+        self.addToPeers(owner) //Owner always belongs to a room
+        self.owner.addToPeersInRooms(self)
         created()
         updated(roomName)
         

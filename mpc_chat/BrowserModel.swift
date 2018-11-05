@@ -310,6 +310,7 @@ class BrowserModel: NSObject{
                 
                 //If no room found, create a new room with the received roomUUID
                 let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: appDelagate.coreDataManager.managedObjectContext) as! Room
+                newRoom.addToPeers(self.thisPeer)
                 
                 //Get the owner as a Peer
                 findPeers([ownerUUID], completion: {
@@ -338,7 +339,7 @@ class BrowserModel: NSObject{
                     //We've seen this peer before, just need a new room
                     newRoom.createNew(roomUUID, roomName: roomName, owner: peer)
                     newRoom.addToPeers(peer)
-                    newRoom.addToPeers(self.thisPeer)
+                    
                     
                     if save(){
                         completion(newRoom)
@@ -350,6 +351,9 @@ class BrowserModel: NSObject{
                 return
             }
             
+            oldRoom.name = roomName //ToDo: Saves room name if sender has changed it. Fix this to check to make sure the person changing the room name is the owner
+            oldRoom.addToPeers(self.thisPeer)
+            
             findPeers([ownerUUID], completion: {
                 (peersFound) -> Void in
                 
@@ -359,7 +363,6 @@ class BrowserModel: NSObject{
                     
                     newPeer.createNew(ownerUUID, peerName: ownerName, connected: false)
                     oldRoom.addToPeers(newPeer)
-                    oldRoom.addToPeers(self.thisPeer)
                     
                     if save(){
                         completion(oldRoom)
@@ -370,10 +373,14 @@ class BrowserModel: NSObject{
                     return
                 }
                 
-                //We've see this peer before, make sure they are added to the old room
+                //We've seen this peer before, make sure they are added to the old room
                 oldRoom.addToPeers(peer)
-                oldRoom.addToPeers(self.thisPeer)
-                completion(oldRoom)
+                
+                if save(){
+                    completion(oldRoom)
+                }else{
+                    discard()
+                }
             })
 
         })

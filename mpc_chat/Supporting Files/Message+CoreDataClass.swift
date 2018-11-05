@@ -29,6 +29,7 @@ public class Message: NSManagedObject {
     func createNew(_ uuid:String?=nil, withContent: String, owner: Peer) -> (){
         
         self.owner = owner
+        self.owner.addToMessages(self) //Owner always owns message
         
         created()
         updated(withContent)

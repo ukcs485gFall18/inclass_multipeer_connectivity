@@ -23,7 +23,7 @@ public class Room: NSManagedObject {
     }
     
     //Called everytime data is modified
-    fileprivate func modified() -> (){
+    func modified() -> (){
         modifiedAt = MPCChatUtility.getCurrentTime()
     }
     

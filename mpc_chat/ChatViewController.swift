@@ -13,10 +13,8 @@ import UIKit
 class ChatViewController: UIViewController {
     
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
-    var messagesArray = [[String:String]]()
     var messagesToDisplay = [Message]()
     var model = ChatModel() //This initialization is replaced by the BrowserView segue preperation
-    //var room: Room?
     var isConnected = false
 
     @IBOutlet weak var roomNameTextField: UITextField!
@@ -25,12 +23,6 @@ class ChatViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        /*
-        if room == nil{
-            print("Error in CharViewController, room == nil")
-            self.dismiss(animated: true, completion: nil)
-            return
-        }*/
         
         model.getAllMessagesInRoom(completion: {
             (messagesFound) -> Void in
@@ -48,6 +40,8 @@ class ChatViewController: UIViewController {
         //ToDo: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
         roomNameTextField.isEnabled = true
     }
+    
+    //ToDo: Need to add a button the storyboard that when tapped, opens a subView or openning to BrowserViewController. Here the user keep see more peers around and add them to the chat. Note: Only owners should be able to add people to the Chat. If someone is not the owner, they can Browse, but tapping and adding a new user to the chat should be disabled
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -79,6 +73,8 @@ class ChatViewController: UIViewController {
         //User changed room name
         if roomNameTextField.text! != model.getRoomName(){
             model.changeRoomName(roomNameTextField.text!)
+            
+            //ToDo: Need to send user a message (shouldn't show on their screen) with the new roomName. Remember, only the owner of a room should be able to change the name of the room. If a Peer is not the owner, the change label should be disabled
         }
     }
     
@@ -109,7 +105,7 @@ class ChatViewController: UIViewController {
         self.tblChat.reloadData()
         
         if self.tblChat.contentSize.height > self.tblChat.frame.size.height {
-            tblChat.scrollToRow(at: NSIndexPath(row: messagesArray.count - 1, section: 0) as IndexPath, at: UITableView.ScrollPosition.bottom, animated: true)
+            tblChat.scrollToRow(at: NSIndexPath(row: messagesToDisplay.count - 1, section: 0) as IndexPath, at: UITableView.ScrollPosition.bottom, animated: true)
         }
     }
     
@@ -126,6 +122,7 @@ extension ChatViewController: UITextFieldDelegate {
                 return
             }
             
+            //ToDo: This is how you send a meesage. This is a hint for sending the newRoom name to the user. What if you send a similar message with kBrowserPeerRoomName in the key and the value of the newRoomName?
             let messageDictionary: [String: String] = [
                 kCommunicationsMessageContentTerm: textField.text!,
                 kCommunicationsMessageUUIDTerm: message.uuid
@@ -202,6 +199,7 @@ extension ChatViewController: MPCManagerMessageDelegate {
         
         if message != kCommunicationsEndConnectionTerm  {
             
+            //ToDo: Hint, this is checking for kCommunicationsMessageUUIDTerm, what if we checked for kBrowserPeerRoomName to detect a room name?
             guard let uuid = dataDictionary[kCommunicationsMessageUUIDTerm] else{
                 print("Error: received messaged is lacking UUID")
                 return

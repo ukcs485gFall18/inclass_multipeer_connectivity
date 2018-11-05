@@ -17,24 +17,18 @@ let kDefaultsKeyFirstRun                                = "FirstRun"
 let kSegueChat                                          = "idSegueChat"
 
 // MARK: - Local notifications
-//let kNotificationMPCDisconnetion                        = "receivedMPCDisconnectionNotification"
-//let kNotificationMPCDataReceived                        = "receivedMPCChatDataNotification"
 let kNotificationMPCIsInitialized                       = "mpcIsInitializedNotification"
 let kNotificationCoreDataInitialized                    = "coreDataInitializedNotification"
 let kNotificationBrowserUserTappedCell                  = "browserUserTappedCell"
 
 // MARK: - SendReceive Dictionary terms
 let kCommunicationsMessageContentTerm                   = "message"
-//let kCommunicationsSenderTerm                           = "sender"
 let kCommunicationsMessageUUIDTerm                      = "uuid"
-let kCommunicationsSelfTerm                             = "self"
-let kCommunicationsFromPeerTerm                         = "fromPeer"
-let kCommunicationsDataTerm                             = "data"
 let kCommunicationsEndConnectionTerm                    = "_end_chat_"
 let kCommunicationsLostConnectionTerm                   = "_lost_connection_"
 
 // MARK: - Browser UI Dictionary terms
-let kBrowserpeerUUIDTerm                                = "peerUUID"
+let kBrowserPeerUUIDTerm                                = "peerUUID"
 let kBrowserPeerRoomUUID                                = "roomUUID"
 let kBrowserPeerRoomName                                = "roomName"
 

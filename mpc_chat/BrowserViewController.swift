@@ -18,8 +18,20 @@ class BrowserViewController: UIViewController {
     
     @IBOutlet weak var tblPeers: UITableView!
     @IBOutlet weak var browserSegment: UISegmentedControl!
+    
     @IBAction func browserSegmentChanged(_ sender: Any) {
-        tblPeers.reloadData()
+        
+        //ToDo: Need to write code to handle when this segment changes. Descriptions are below
+        switch browserSegment.selectedSegmentIndex {
+        case 0: //This is the original browser, already works correctly
+            tblPeers.reloadData()
+        case 1: //This segment to show Peers that the user has connected to before, but only the ones who are currently fund on browser. If you are around a 100 peers, but only want to see the ones you know. Should sort by lastTimeConnected. The work should be done in the BrowserModel
+            tblPeers.reloadData()
+        case 2: //This should list all if the chats you have been in before and be sorted from modifiedAt
+            tblPeers.reloadData()
+        default:
+            tblPeers.reloadData()
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -56,7 +68,7 @@ class BrowserViewController: UIViewController {
         // Note: use notification.object if you want to send any data with a posted Notification
         let receivedDataDictionary = notification.object as! [String: Any]
         
-        guard let peerUUID = receivedDataDictionary[kBrowserpeerUUIDTerm] as? String else{
+        guard let peerUUID = receivedDataDictionary[kBrowserPeerUUIDTerm] as? String else{
             print("Error in BrowserViewController.handleBrowserUserTappedCell(). peerUUID not found")
             return
         }

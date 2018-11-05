@@ -153,7 +153,7 @@ class ChatModel: NSObject{
         
         //ToDo: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
         let oldRoomName = thisRoom.name
-        thisRoom.name = name
+        thisRoom.updated(name)
         
         if save(){
             print("Successfully changed room name from \(oldRoomName) to \(thisRoom.name)")
@@ -176,7 +176,7 @@ class ChatModel: NSObject{
             
             newMessage.createNew(uuid, withContent: content, owner: peer)
             thisRoom.addToMessages(newMessage)
-            
+            thisRoom.modified()
             if save(){
                 completion(newMessage)
             }else{

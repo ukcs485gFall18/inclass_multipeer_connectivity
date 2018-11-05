@@ -26,7 +26,6 @@ public class Peer: NSManagedObject {
     //Called everytime data is modified
     fileprivate func modified() -> (){
         modifiedAt = MPCChatUtility.getCurrentTime()
-        lastSeen = modifiedAt
     }
     
     func createNew(_ peerUUID: String, peerName: String, connected:Bool) -> (){
@@ -34,10 +33,10 @@ public class Peer: NSManagedObject {
         self.peerName = peerName
         
         created()
-        updated(connected: connected)
+        update(connected: connected)
     }
     
-    func updated(_ peerName:String?=nil, connected:Bool)-> (){
+    func update(_ peerName:String?=nil, connected:Bool)-> (){
         if let newPeerName = peerName{
             self.peerName = newPeerName
         }
@@ -46,6 +45,16 @@ public class Peer: NSManagedObject {
         
         if connected{
             updateConnected()
+        }
+        
+    }
+    
+    func updateLastSeen()-> (){
+        let currentTime = MPCChatUtility.getCurrentTime()
+        
+        if currentTime > lastSeen{
+            lastSeen = currentTime
+            modified()
         }
         
     }

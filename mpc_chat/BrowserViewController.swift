@@ -15,8 +15,6 @@ class BrowserViewController: UIViewController {
     
     let appDelagate = UIApplication.shared.delegate as! AppDelegate
     let model = BrowserModel()
-    let peersSeenBefore = [Int:Peer]()
-    var roomToJoin:Room?
     
     @IBOutlet weak var tblPeers: UITableView!
     @IBOutlet weak var browserSegment: UISegmentedControl!
@@ -86,7 +84,7 @@ class BrowserViewController: UIViewController {
                     let createOldRoomAction: UIAlertAction = UIAlertAction(title: actionTitle, style: UIAlertAction.Style.default) {
                         (alertAction) -> Void in
                         
-                        self.roomToJoin = room //Set the room to join to help preperation of segue
+                        self.model.roomToJoin = room //Set the room to join to help preperation of segue
                         
                         //Build invite information to send to user
                         let info = [
@@ -123,7 +121,7 @@ class BrowserViewController: UIViewController {
                         return
                     }
                     
-                    self.roomToJoin = room
+                    self.model.roomToJoin = room
                     
                     //Build invite information to send to user
                     let info = [
@@ -194,10 +192,14 @@ class BrowserViewController: UIViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if (segue.identifier == kSegueChat) {
             
+            //Prepare the upcoming view with all of the necessary info
             let viewController = segue.destination as! ChatViewController
             
-            viewController.room = roomToJoin
-            viewController.model = ChatModel(peer: model.getPeer, peerUUIDHashDictionary: model.getPeerUUIDHashDictionary, peerHashUUIDDictionary: model.getPeerHashUUIDDictionary)
+            guard let room = model.roomToJoin else{
+                fatalError("Never set the room for segue, should never happen")
+            }
+            
+            viewController.model = ChatModel(peer: model.getPeer, peerUUIDHashDictionary: model.getPeerUUIDHashDictionary, peerHashUUIDDictionary: model.getPeerHashUUIDDictionary, room: room)
             viewController.isConnected = true
         }
     }
@@ -247,7 +249,7 @@ extension BrowserViewController: MPCManagerDelegate{
                 (roomFound) -> Void in
                 
                 if roomFound != nil{
-                    self.roomToJoin = roomFound!
+                    self.model.roomToJoin = roomFound!
                     completion(fromPeerHash, true)
                 }else{
                     print("Couldn't create room in CoreData")
@@ -351,7 +353,7 @@ extension BrowserViewController: UITableViewDelegate, UITableViewDataSource{
                 return
             }
             
-            cell.lastConnectedLabel?.text = lastConnectedPeer.description
+            cell.lastConnectedLabel?.text = MPCChatUtility.getRelativeTime(lastConnectedPeer)
             
         })
         

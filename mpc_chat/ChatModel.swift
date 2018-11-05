@@ -16,6 +16,7 @@ class ChatModel: NSObject{
     fileprivate var peerUUIDHash:[String:Int]!
     fileprivate var peerHashUUID:[Int:String]!
     fileprivate var thisPeer:Peer!
+    fileprivate var thisRoom:Room!
     
     var getPeer: Peer{
         get{
@@ -27,18 +28,47 @@ class ChatModel: NSObject{
         super.init()
     }
     
-    convenience init(peer: Peer, peerUUIDHashDictionary: [String:Int], peerHashUUIDDictionary: [Int:String]) {
+    convenience init(peer: Peer, peerUUIDHashDictionary: [String:Int], peerHashUUIDDictionary: [Int:String], room: Room) {
         self.init()
         thisPeer = peer
         peerUUIDHash = peerUUIDHashDictionary
         peerHashUUID = peerHashUUIDDictionary
+        thisRoom = room
     }
+    
+    //MARK: Private methods
+    
+    fileprivate func findMessages(_ messageUUIDs: [String], completion : (_ messagesFound:[Message]?) -> ()){
+        
+        var predicateArray = [NSPredicate]()
+        predicateArray.append(NSPredicate(format: "\(kCoreDataMessageAttributeUUID) IN %@", messageUUIDs))
+        
+        let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
+        
+        //This is how you find sorted data
+        appDelagate.coreDataManager.queryCoreDataMessages(compoundQuery, sortBy: kCoreDataMessageAttributeCreatedAt, inDescendingOrder: false, completion: {
+            (messagesFound) -> Void in
+            
+            completion(messagesFound)
+            
+        })
+    }
+    
+    fileprivate func save()->Bool{
+        return appDelagate.coreDataManager.saveContext()
+    }
+    
+    fileprivate func discard()->(){
+        appDelagate.coreDataManager.managedObjectContext.rollback()
+    }
+    
+    //MARK: Public methods
 
-    func getAllMessagesFrom(_ room: Room?, completion : (_ sortedMessages:[Message]?) -> ()){
+    func getAllMessagesInRoom(completion : (_ sortedMessages:[Message]?) -> ()){
         
         var messageUUIDs = [String]()
         
-        guard let messages = room?.messages else {
+        guard let messages = thisRoom.messages else {
             completion(nil)
             return
         }
@@ -75,9 +105,12 @@ class ChatModel: NSObject{
         
         peerUUIDHash[uuid] = peerHash
         peerHashUUID[peerHash] = uuid
+        
+        BrowserModel.updateLastTimeSeenPeer([uuid])
     }
     
-    func lostPeer(_ peerHash:Int, room: Room, completion: (_ lostPeerInThisRoom: Bool) -> ()){
+
+    func lostPeer(_ peerHash:Int, completion: (_ lostPeerInThisRoom: Bool) -> ()){
         //Remove from both dictionaries
         guard let uuid = peerHashUUID.removeValue(forKey: peerHash) else{
             completion(false)
@@ -87,12 +120,7 @@ class ChatModel: NSObject{
         _ = peerUUIDHash.removeValue(forKey: uuid)
         
         //Check to see if the peer lost was in this room
-        var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributepeerUUID) IN %@", [uuid]))
-        
-        let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
-        
-        appDelagate.coreDataManager.queryCoreDataPeers(compoundQuery, completion: {
+        BrowserModel.findPeers([uuid], completion: {
             (peers) -> Void in
             
             guard let peer = peers?.first else{
@@ -100,7 +128,7 @@ class ChatModel: NSObject{
                 return
             }
             
-            if room.peers.contains(peer){
+            if thisRoom.peers.contains(peer){
                 completion(true)
             }else{
                 completion(false)
@@ -117,44 +145,27 @@ class ChatModel: NSObject{
         return peerUUIDHash[peerUUID]
     }
     
-    func findMessages(_ messageUUIDs: [String], completion : (_ messagesFound:[Message]?) -> ()){
-        
-        var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataMessageAttributeUUID) IN %@", messageUUIDs))
-        
-        let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
-        
-        //This is how you find sorted data
-        appDelagate.coreDataManager.queryCoreDataMessages(compoundQuery, sortBy: kCoreDataMessageAttributeCreatedAt, inDescendingOrder: false, completion: {
-            (messagesFound) -> Void in
-            
-            completion(messagesFound)
-            
-        })
+    func getRoomName() -> String{
+        return thisRoom.name
     }
     
-    func changeRoomName(_ room:Room, toNewName name:String) ->(){
+    func changeRoomName(_ name:String) ->(){
         
         //ToDo: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
-        let oldRoomName = room.name
-        room.name = name
+        let oldRoomName = thisRoom.name
+        thisRoom.name = name
         
         if save(){
-            print("Successfully changed room name from \(oldRoomName) to \(room.name)")
+            print("Successfully changed room name from \(oldRoomName) to \(thisRoom.name)")
         }else{
             print("Could not save changes of room name")
         }
     }
     
-    func storeNewMessage(_ uuid: String?=nil, content: String, fromPeer: String, inRoom room: Room, completion : (_ rooms:Message?) -> ()){
+    func storeNewMessage(_ uuid: String?=nil, content: String, fromPeer: String, completion : (_ message:Message?) -> ()){
         
         //Find peer in CoreData
-        var predicates = [NSPredicate]()
-        predicates.append(NSPredicate(format: "\(kCoreDataPeerAttributepeerUUID) IN %@", [fromPeer]))
-        
-        let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
-        
-        appDelagate.coreDataManager.queryCoreDataPeers(compoundQuery, completion: {
+        BrowserModel.findPeers([fromPeer], completion: {
             (peerFound) -> Void in
             
             guard let peer = peerFound?.first else{
@@ -164,7 +175,7 @@ class ChatModel: NSObject{
             let newMessage = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityMessage, into: appDelagate.coreDataManager.managedObjectContext) as! Message
             
             newMessage.createNew(uuid, withContent: content, owner: peer)
-            room.addToMessages(newMessage)
+            thisRoom.addToMessages(newMessage)
             
             if save(){
                 completion(newMessage)
@@ -172,16 +183,11 @@ class ChatModel: NSObject{
                 discard()
                 completion(nil)
             }
-        
+            
         })
+        
     }
     
-    fileprivate func save()->Bool{
-        return appDelagate.coreDataManager.saveContext()
-    }
     
-    fileprivate func discard()->(){
-        appDelagate.coreDataManager.managedObjectContext.rollback()
-    }
 }
 

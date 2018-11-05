@@ -16,6 +16,7 @@ class BrowserModel: NSObject{
     fileprivate var peerHashUUID = [Int:String]()
     fileprivate let appDelagate = UIApplication.shared.delegate as! AppDelegate
     fileprivate var thisPeer:Peer!
+    var roomToJoin:Room?
     
     var getPeerUUIDHashDictionary:[String:Int]{
         get{
@@ -48,6 +49,78 @@ class BrowserModel: NSObject{
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
     }
     
+    //MARK: Private methods
+    @objc fileprivate func handleCoreDataIsReady(_ notification: NSNotification){
+        
+        //Ensure MPCManager is up and running
+        if (appDelagate.mpcManager == nil) || (!appDelagate.coreDataManager.isCoreDataReady){
+            return
+        }
+        
+        let (myPeerUUID, myPeerName) = (appDelagate.peerUUID, appDelagate.peerDisplayName)
+        
+        storeNewPeer(peerUUID: myPeerUUID, peerName: myPeerName, isConnectedToPeer: false, completion: {
+            (storedPeer) -> Void in
+            
+            guard let peer = storedPeer else{
+                print("Error in saving myself to CoreData")
+                return
+            }
+            
+            self.thisPeer = peer //Keep myself available for the life of the model
+            print("Saved my info to CoreData")
+            
+        })
+    }
+    
+    fileprivate func findRooms(_ roomUUIDs: [String], completion : (_ roomsFound:[Room]?) -> ()){
+        
+        var predicateArray = [NSPredicate]()
+        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeUUID) IN %@", roomUUIDs))
+        
+        let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
+        
+        appDelagate.coreDataManager.queryCoreDataRooms(compoundQuery, completion: {
+            (rooms) -> Void in
+            
+            completion(rooms)
+            
+        })
+    }
+    
+    fileprivate func findRooms(_ owner: Peer, withPeer peer :Peer, completion : (_ roomsFound:[Room]?) -> ()){
+        
+        //Build query for this user as owner
+        var predicateArray = [NSPredicate]()
+        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [owner], peer))
+        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [peer], owner))
+        
+        let compoundQuery = NSCompoundPredicate(orPredicateWithSubpredicates: predicateArray)
+        
+        var roomsToReturn = [Room]()
+        
+        appDelagate.coreDataManager.queryCoreDataRooms(compoundQuery, sortBy: kCoreDataRoomAttributeModifiedAt, inDescendingOrder: true, completion: {
+            (roomsFound) -> Void in
+            
+            if roomsFound != nil{
+                roomsToReturn.append(contentsOf: roomsFound!)
+            }
+            
+            completion(roomsToReturn)
+        })
+    }
+    
+    fileprivate func save()->Bool{
+        return appDelagate.coreDataManager.saveContext()
+    }
+    
+    fileprivate func discard()->(){
+        appDelagate.coreDataManager.managedObjectContext.rollback()
+    }
+    
+    
+    //MARK: Public methods
+    
     func foundPeer(_ peerHash:Int, info: [String:String]?) -> () {
         //Add peers to both dictionaries
         
@@ -57,6 +130,8 @@ class BrowserModel: NSObject{
         
         peerUUIDHash[uuid] = peerHash
         peerHashUUID[peerHash] = uuid
+        
+        BrowserModel.updateLastTimeSeenPeer([uuid])
     }
     
     func lostPeer(_ peerHash:Int) -> (){
@@ -112,54 +187,15 @@ class BrowserModel: NSObject{
             }
             
             //ToDo: Need to update the lastTimeConnected when an item is already saved to CoreData. Hint should use, "peer" above to make update
-            print("Found saved peer - \(peerName), with uuid value - \(peerUUID). Updated lastSeen information")
+            print("Found saved peer - \(peer.peerName), with uuid value - \(peerUUID). Updated lastSeen information")
             completion(peer)
-            
-        })
-    }
-    
-
-    @objc func handleCoreDataIsReady(_ notification: NSNotification){
-        
-        //Ensure MPCManager is up and running
-        if (appDelagate.mpcManager == nil) || (!appDelagate.coreDataManager.isCoreDataReady){
-            return
-        }
-        
-        let (myPeerUUID, myPeerName) = (appDelagate.peerUUID, appDelagate.peerDisplayName)
-        
-        storeNewPeer(peerUUID: myPeerUUID, peerName: myPeerName, isConnectedToPeer: false, completion: {
-            (storedPeer) -> Void in
-            
-            guard let peer = storedPeer else{
-                print("Error in saving myself to CoreData")
-                return
-            }
-            
-            self.thisPeer = peer //Keep myself available for the life of the model
-            print("Saved my info to CoreData")
-        
-        })
-    }
-    
-    func findPeers(_ peerUUIDs: [String], completion : (_ peersFound:[Peer]?) -> ()){
-        
-        var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributepeerUUID) IN %@", peerUUIDs))
-        
-        let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
-        
-        appDelagate.coreDataManager.queryCoreDataPeers(compoundQuery, completion: {
-            (peers) -> Void in
-            
-            completion(peers)
             
         })
     }
     
     func lastTimeSeenPeer(_ peerUUID: String, completion : (_ lastSeen: Date?, _ lastConnected: Date?) -> ()){
         
-        findPeers([peerUUID], completion: {
+        BrowserModel.findPeers([peerUUID], completion: {
             (peersFound) -> Void in
             
             guard let foundPeer = peersFound?.first else{
@@ -171,46 +207,11 @@ class BrowserModel: NSObject{
         })
     }
     
-    func findRooms(_ roomUUIDs: [String], completion : (_ roomsFound:[Room]?) -> ()){
-        
-        var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeUUID) IN %@", roomUUIDs))
-        
-        let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
-        
-        appDelagate.coreDataManager.queryCoreDataRooms(compoundQuery, completion: {
-            (rooms) -> Void in
-            
-            completion(rooms)
-            
-        })
-    }
     
-    func findRooms(_ owner: Peer, withPeer peer :Peer, completion : (_ roomsFound:[Room]?) -> ()){
-        
-        //Build query for this user as owner
-        var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [owner], peer))
-        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [peer], owner))
-        
-        let compoundQuery = NSCompoundPredicate(orPredicateWithSubpredicates: predicateArray)
-        
-        var roomsToReturn = [Room]()
-        
-        appDelagate.coreDataManager.queryCoreDataRooms(compoundQuery, sortBy: kCoreDataRoomAttributeModifiedAt, inDescendingOrder: true, completion: {
-            (roomsFound) -> Void in
-            
-            if roomsFound != nil{
-                roomsToReturn.append(contentsOf: roomsFound!)
-            }
-            
-            completion(roomsToReturn)
-        })
-    }
     
     func findOldChatRooms(_ ownerUUID: String, peerToJoinUUID: String, completion : (_ room:[Room]?) -> ()){
         
-        findPeers([peerToJoinUUID], completion: {
+        BrowserModel.findPeers([peerToJoinUUID], completion: {
             (peersFound) -> Void in
             
             guard let peer = peersFound?.first else{
@@ -238,7 +239,7 @@ class BrowserModel: NSObject{
         
         let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: appDelagate.coreDataManager.managedObjectContext) as! Room
         
-        findPeers([peerToJoinUUID], completion: {
+        BrowserModel.findPeers([peerToJoinUUID], completion: {
             (peersFound) -> Void in
             
             guard let peer = peersFound?.first else{
@@ -313,7 +314,7 @@ class BrowserModel: NSObject{
                 newRoom.addToPeers(self.thisPeer)
                 
                 //Get the owner as a Peer
-                findPeers([ownerUUID], completion: {
+                BrowserModel.findPeers([ownerUUID], completion: {
                     (peersFound) -> Void in
                     
                     guard let peer = peersFound?.first else{
@@ -354,7 +355,7 @@ class BrowserModel: NSObject{
             oldRoom.name = roomName //ToDo: Saves room name if sender has changed it. Fix this to check to make sure the person changing the room name is the owner
             oldRoom.addToPeers(self.thisPeer)
             
-            findPeers([ownerUUID], completion: {
+            BrowserModel.findPeers([ownerUUID], completion: {
                 (peersFound) -> Void in
                 
                 guard let peer = peersFound?.first else{
@@ -386,11 +387,39 @@ class BrowserModel: NSObject{
         })
     }
     
-    fileprivate func save()->Bool{
-        return appDelagate.coreDataManager.saveContext()
+    //MARK: Class methods, these are utility methods that multiple class may want to use
+    
+    class func findPeers(_ peerUUIDs: [String], completion : (_ peersFound:[Peer]?) -> ()){
+        
+        let appDelagate = UIApplication.shared.delegate as! AppDelegate
+        
+        var predicateArray = [NSPredicate]()
+        predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributepeerUUID) IN %@", peerUUIDs))
+        
+        let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
+        
+        appDelagate.coreDataManager.queryCoreDataPeers(compoundQuery, completion: {
+            (peers) -> Void in
+            
+            completion(peers)
+            
+        })
+        
     }
     
-    fileprivate func discard()->(){
-        appDelagate.coreDataManager.managedObjectContext.rollback()
+    class func updateLastTimeSeenPeer(_ peerUUIDs: [String]) -> (){
+        BrowserModel.findPeers(peerUUIDs, completion: {
+            (peersFound) -> Void in
+            
+            guard let foundPeers = peersFound else{
+                //Do nothing if this peer isn't in CoreData
+                return
+            }
+            
+            for peer in foundPeers {
+                peer.updateLastSeen()
+            }
+        })
     }
+    
 }

@@ -16,7 +16,7 @@ class ChatViewController: UIViewController {
     var messagesArray = [[String:String]]()
     var messagesToDisplay = [Message]()
     var model = ChatModel() //This initialization is replaced by the BrowserView segue preperation
-    var room: Room?
+    //var room: Room?
     var isConnected = false
 
     @IBOutlet weak var roomNameTextField: UITextField!
@@ -25,14 +25,14 @@ class ChatViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
+        /*
         if room == nil{
             print("Error in CharViewController, room == nil")
             self.dismiss(animated: true, completion: nil)
             return
-        }
+        }*/
         
-        model.getAllMessagesFrom(room!, completion: {
+        model.getAllMessagesInRoom(completion: {
             (messagesFound) -> Void in
             
             guard let messages = messagesFound else{
@@ -43,7 +43,8 @@ class ChatViewController: UIViewController {
             tblChat.reloadData()
         })
         
-        roomNameTextField.text = room!.name
+        roomNameTextField.text = model.getRoomName()
+        
         //ToDo: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
         roomNameTextField.isEnabled = true
     }
@@ -76,8 +77,8 @@ class ChatViewController: UIViewController {
     @IBAction func userChangedRoomName(_ sender: Any) {
         
         //User changed room name
-        if roomNameTextField.text! != room!.name{
-            model.changeRoomName(room!, toNewName: roomNameTextField.text!)
+        if roomNameTextField.text! != model.getRoomName(){
+            model.changeRoomName(roomNameTextField.text!)
         }
     }
     
@@ -118,11 +119,7 @@ extension ChatViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         
-        guard let thisRoom = room else{
-            return true
-        }
-        
-        model.storeNewMessage(content: textField.text!, fromPeer: appDelegate.peerUUID, inRoom: thisRoom, completion: {
+        model.storeNewMessage(content: textField.text!, fromPeer: appDelegate.peerUUID, completion: {
             (messageStored) -> Void in
             
             guard let message = messageStored else{
@@ -142,12 +139,13 @@ extension ChatViewController: UITextFieldDelegate {
                 let connectedPeers = self.appDelegate.mpcManager.getPeersConnectedTo()
                 
                 OperationQueue.main.addOperation{ () -> Void in
+                    
+                    let roomName = self.model.getRoomName()
+                    
                     if self.appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
-                        
-                        print("Sent message \(message.content) to room \(thisRoom.name)")
-                        
+                        print("Sent message \(message.content) to room \(roomName)")
                     }else{
-                        print("Couldn't send message \(message.content) to room \(thisRoom.name)")
+                        print("Couldn't send message \(message.content) to room \(roomName)")
                     }
                 }
             }
@@ -164,12 +162,8 @@ extension ChatViewController: MPCManagerMessageDelegate {
     
     func lostPeer(_ peerHash: Int, peerName: String) {
         
-        guard let thisRoom = room else{
-            return
-        }
-        
         //Check to see if this is a peer we were connected to
-        model.lostPeer(peerHash, room: thisRoom, completion: {
+        model.lostPeer(peerHash, completion: {
             (success) -> Void in
             
             if success{
@@ -180,6 +174,8 @@ extension ChatViewController: MPCManagerMessageDelegate {
                 }
                 
                 alert.addAction(doneAction)
+                
+                //ToDo: Need to update the lastTimeConnected when an item is already saved to CoreData. This is when you disconnected from the user. Hint: use peerHash to find peer.
                 
                 OperationQueue.main.addOperation({ () -> Void in
                     self.present(alert, animated: true, completion: nil)
@@ -206,11 +202,6 @@ extension ChatViewController: MPCManagerMessageDelegate {
         
         if message != kCommunicationsEndConnectionTerm  {
             
-            guard let thisRoom = room else{
-                print("Error: this Chat doesn't have a room, this should never happen")
-                return
-            }
-            
             guard let uuid = dataDictionary[kCommunicationsMessageUUIDTerm] else{
                 print("Error: received messaged is lacking UUID")
                 return
@@ -220,7 +211,7 @@ extension ChatViewController: MPCManagerMessageDelegate {
                 return
             }
             
-            model.storeNewMessage(uuid, content: message, fromPeer: fromPeerUUID, inRoom: thisRoom, completion: {
+            model.storeNewMessage(uuid, content: message, fromPeer: fromPeerUUID, completion: {
                 (messageReceived) -> Void in
                 
                 guard let message = messageReceived else{

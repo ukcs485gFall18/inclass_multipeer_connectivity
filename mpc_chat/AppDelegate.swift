@@ -21,7 +21,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     var mpcManager: MPCManager!
     var coreDataManager:CoreDataManager!
-    var isCoreDataAvailable = false
     var peerUUID = ""
     var peerDisplayName = ""
 
@@ -43,7 +42,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         coreDataManager = CoreDataManager(databaseName: kCoreDataDBName, completionClosure: {
         
             print("CoreData initialized")
-            self.isCoreDataAvailable = true
+            self.coreDataManager.setCoreDataAsReady()
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
         })
         

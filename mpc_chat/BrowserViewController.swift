@@ -17,7 +17,6 @@ class BrowserViewController: UIViewController {
     let model = BrowserModel()
     let peersSeenBefore = [Int:Peer]()
     var roomToJoin:Room?
-    var peerUUIDHash = [String:Int]()
     
     @IBOutlet weak var tblPeers: UITableView!
     @IBOutlet weak var browserSegment: UISegmentedControl!
@@ -50,11 +49,12 @@ class BrowserViewController: UIViewController {
     }
     
     @objc func handleCoreDataInitializedReceived(_ notification: NSNotification) {
-        
-        tblPeers.reloadData() //Reload cells to reflect coreData
+        //Reload cells to reflect coreData updates
+        tblPeers.reloadData()
     }
     
     @objc func handleBrowserUserTappedCell(_ notification: NSNotification) {
+        
         // Note: use notification.object if you want to send any data with a posted Notification
         let receivedDataDictionary = notification.object as! [String: Any]
         
@@ -63,7 +63,7 @@ class BrowserViewController: UIViewController {
             return
         }
         
-        guard let peerHash = peerUUIDHash[peerUUID] else{
+        guard let peerHash = model.getPeerHashFromUUID(peerUUID) else{
             return
         }
         
@@ -71,44 +71,90 @@ class BrowserViewController: UIViewController {
             return
         }
         
-        let roomName = "Chat w/ \(peerDisplayName)"
-        
-        let actionSheet = UIAlertController(title: "", message: "Connect to \(peerDisplayName)", preferredStyle: UIAlertController.Style.actionSheet)
-        
-        let actionTitle = "Connect to \(peerDisplayName)"
-        
-        let connectAction: UIAlertAction = UIAlertAction(title: actionTitle, style: UIAlertAction.Style.default) { (alertAction) -> Void in
+        model.findOldChatRooms(self.appDelagate.peerUUID, peerToJoinUUID: peerUUID, completion: {
+            (oldRoomsFound)-> Void in
             
-            self.model.createNewChatRoom(peerUUID, roomName: roomName, completion: {
-                (createdRoom) -> Void in
+            var oldRoomActions = [UIAlertAction]()
+            
+            //Need too add all rooms, will limit to last 3 for readability
+            if oldRoomsFound != nil{
                 
-                guard let room = createdRoom else{
-                    return
+                for (index,room) in oldRoomsFound!.enumerated(){
+                    
+                    let actionTitle = "Join \(room.name)"
+                    
+                    let createOldRoomAction: UIAlertAction = UIAlertAction(title: actionTitle, style: UIAlertAction.Style.default) {
+                        (alertAction) -> Void in
+                        
+                        self.roomToJoin = room
+                        
+                        //Build invite information to send to user
+                        let info = [
+                            kBrowserPeerRoomUUID: room.uuid,
+                            kBrowserPeerRoomName: room.name
+                        ]
+                        
+                        OperationQueue.main.addOperation{ () -> Void in
+                            //This method is used to send peer info they should used to connect
+                            self.appDelagate.mpcManager.invitePeer(peerHash, additionalInfo: info)
+                        }
+                    }
+                    
+                    oldRoomActions.append(createOldRoomAction)
+                    
+                    //Limiting to first 3 for readability
+                    if index == 2{
+                        break
+                    }
                 }
-                
-                self.roomToJoin = room
-                
-                //Build invite information to send to user
-                let info = [
-                    kBrowserPeerRoomUUID: room.uuid,
-                    kBrowserPeerRoomName: roomName
-                ]
-                
-                //This method is used to send peer info they should used to connect
-                self.appDelagate.mpcManager.invitePeer(peerHash, additionalInfo: info)
-                
-            })
-        }
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: UIAlertAction.Style.cancel) { (alertAction) -> Void in
+            }
             
-        }
-        
-        actionSheet.addAction(connectAction)
-        actionSheet.addAction(cancelAction)
-        //ToDo: Need to allow the user to add to a previous created room, Need to query for the room and .addAction for each room here
-        
-        self.present(actionSheet, animated: true, completion: nil)
+            let roomName = "Chat w/ \(peerDisplayName)" //Probably want to come up with better default room name
+            
+            let actionSheet = UIAlertController(title: "", message: "Connect to \(peerDisplayName)", preferredStyle: UIAlertController.Style.actionSheet)
+            
+            let actionNewRoomTitle = "Create New \(roomName)"
+            let createNewRoomAction: UIAlertAction = UIAlertAction(title: actionNewRoomTitle, style: UIAlertAction.Style.default) { (alertAction) -> Void in
+                
+                self.model.createNewChatRoom(self.appDelagate.peerUUID, peerToJoinUUID: peerUUID, roomName: roomName, completion: {
+                    (createdRoom) -> Void in
+                    
+                    guard let room = createdRoom else{
+                        return
+                    }
+                    
+                    self.roomToJoin = room
+                    
+                    //Build invite information to send to user
+                    let info = [
+                        kBrowserPeerRoomUUID: room.uuid,
+                        kBrowserPeerRoomName: roomName
+                    ]
+                    
+                    OperationQueue.main.addOperation{ () -> Void in
+                        //This method is used to send peer info they should used to connect
+                        self.appDelagate.mpcManager.invitePeer(peerHash, additionalInfo: info)
+                    }
+                    
+                })
+            }
+            
+            let cancelAction = UIAlertAction(title: "Cancel", style: UIAlertAction.Style.cancel) { (alertAction) -> Void in
+                
+            }
+            
+            actionSheet.addAction(createNewRoomAction)
+            //Add all old actions before cancel
+            for action in oldRoomActions{
+                actionSheet.addAction(action)
+            }
+            actionSheet.addAction(cancelAction)
+            
+            OperationQueue.main.addOperation{ () -> Void in
+                self.present(actionSheet, animated: true, completion: nil)
+            }
+            
+        })
         
     }
     
@@ -232,15 +278,16 @@ extension BrowserViewController: MPCManagerDelegate{
         }
         
         model.storeNewPeer(peerUUID: peerUUID, peerName: peerName, isConnectedToPeer: true, completion: {
-            (stored) -> Void in
+            (storedPeer) -> Void in
             
-            if stored{
+            if storedPeer == nil{
+                print("Couldn't store peer info, disconnecting from \(peerName) with uuid \(peerUUID)")
+                appDelagate.mpcManager.disconnect()
+                
+            }else{
                 OperationQueue.main.addOperation{ () -> Void in
                     self.performSegue(withIdentifier: kSegueChat, sender: self)
                 }
-            }else{
-                print("Couldn't store peer info, disconnecting from \(peerName) with uuid \(peerUUID)")
-                appDelagate.mpcManager.disconnect()
             }
         })
     }

@@ -41,6 +41,11 @@ class ChatModel: NSObject{
             messageUUIDs.append(message.uuid)
         }
         
+        if messageUUIDs.count == 0{
+            completion(nil)
+            return
+        }
+        
         findMessages(messageUUIDs, completion: {
             
             (messagesFound) -> Void in

@@ -18,7 +18,7 @@ class BrowserModel: NSObject{
     
     var getPeersFoundUUIDs:[String]{
         get{
-            return peerUUIDHash.keys.filter({$0 is String})
+            return peerUUIDHash.keys.map({$0})
         }
     }
     
@@ -58,7 +58,7 @@ class BrowserModel: NSObject{
         return peerUUIDHash[peerUUID]
     }
     
-    func storeNewPeer(peerUUID: String, peerName: String, isConnectedToPeer: Bool, completion : (_ stored:Bool) -> ()){
+    func storeNewPeer(peerUUID: String, peerName: String, isConnectedToPeer: Bool, completion : (_ peer:Peer?) -> ()){
         
         var predicateArray = [NSPredicate]()
         predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributepeerUUID) IN %@", [peerUUID]))
@@ -70,7 +70,7 @@ class BrowserModel: NSObject{
             (peersFound) -> Void in
             
             guard let peers = peersFound else{
-                completion(false)
+                completion(nil)
                 return
             }
             
@@ -83,11 +83,11 @@ class BrowserModel: NSObject{
                 newPeer.createNew(peerUUID, peerName: peerName, connected: isConnectedToPeer)
                 
                 if save(){
-                    completion(true)
+                    completion(newPeer)
                 }else{
                     print("Could not save newEntity for peer - \(peerName), with uuid value - \(peerUUID)")
                     discard()
-                    completion(false)
+                    completion(nil)
                 }
             
                 return
@@ -95,7 +95,7 @@ class BrowserModel: NSObject{
             
             //ToDo: Need to update the lastTimeConnected when an item is already saved to CoreData. Hint should use, "peer" above to make update
             print("Found saved peer - \(peerName), with uuid value - \(peerUUID). Updated lastSeen information")
-            completion(true)
+            completion(peer)
             
         })
     }
@@ -104,21 +104,22 @@ class BrowserModel: NSObject{
     @objc func handleCoreDataIsReady(_ notification: NSNotification){
         
         //Ensure MPCManager is up and running
-        if (appDelagate.mpcManager == nil) || (!appDelagate.isCoreDataAvailable){
+        if (appDelagate.mpcManager == nil) || (!appDelagate.coreDataManager.isCoreDataReady){
             return
         }
         
         let (myPeerUUID, myPeerName) = (appDelagate.peerUUID, appDelagate.peerDisplayName)
         
         storeNewPeer(peerUUID: myPeerUUID, peerName: myPeerName, isConnectedToPeer: false, completion: {
-            (success) -> Void in
+            (storedPeer) -> Void in
             
-            if success{
-                print("Saved my info to CoreData")
-            }else{
+            guard let _ = storedPeer else{
                 print("Error in saving myself to CoreData")
+                return
             }
             
+            print("Saved my info to CoreData")
+        
         })
     }
     
@@ -154,7 +155,7 @@ class BrowserModel: NSObject{
     func findRooms(_ roomUUIDs: [String], completion : (_ roomsFound:[Room]?) -> ()){
         
         var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeCreatedAt) IN %@", roomUUIDs))
+        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeUUID) IN %@", roomUUIDs))
         
         let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
         
@@ -166,30 +167,154 @@ class BrowserModel: NSObject{
         })
     }
     
-    func createNewChatRoom(_ ownerUUID: String, roomName: String, completion : (_ room:Room?) -> ()){
+    func findRooms(_ owner: Peer, withPeer peer :Peer, completion : (_ roomsFound:[Room]?) -> ()){
         
-        let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: appDelagate.coreDataManager.managedObjectContext) as! Room
+        //Build query for this user as owner
+        var predicateArray = [NSPredicate]()
+        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [owner], peer))
+        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [peer], owner))
         
-        findPeers([ownerUUID], completion: {
+        let compoundQuery = NSCompoundPredicate(orPredicateWithSubpredicates: predicateArray)
+        
+        var roomsToReturn = [Room]()
+        
+        appDelagate.coreDataManager.queryCoreDataRooms(compoundQuery, sortBy: kCoreDataRoomAttributeModifiedAt, inDescendingOrder: true, completion: {
+            (roomsFound) -> Void in
+            
+            if roomsFound != nil{
+                roomsToReturn.append(contentsOf: roomsFound!)
+            }
+            
+            completion(roomsToReturn)
+        })
+    }
+    
+    func findOldChatRooms(_ ownerUUID: String, peerToJoinUUID: String, completion : (_ room:[Room]?) -> ()){
+        
+        findPeers([ownerUUID, peerToJoinUUID], completion: {
             (peersFound) -> Void in
             
-            guard let peer = peersFound?.first else{
+            guard let peers = peersFound else{
                 discard()
                 completion(nil)
                 return
             }
             
-            newRoom.createNew(roomName, owner: peer)
-            newRoom.addToPeers(peer)
+            var owner:Peer?
+            var peerToJoin:Peer?
             
-            if save(){
-                completion(newRoom)
-            }else{
-                print("Could not save newEntity for Room - \(roomName), with owner - \(ownerUUID)")
-                discard()
-                completion(nil)
+            //Owner has to be one of the peers found, peerToJoin has to be the other.
+            //The other way to do this is search for each individually...
+            for peer in peers{
+                if peer.peerUUID == appDelagate.peerUUID{
+                    owner = peer
+                }else{
+                    peerToJoin = peer
+                }
             }
             
+            guard let foundOwner = owner else{
+                completion(nil)
+                return
+            }
+            
+            guard let foundPeerToJoin = peerToJoin else{
+                completion(nil)
+                return
+            }
+            
+            findRooms(foundOwner, withPeer: foundPeerToJoin, completion: {
+                (roomsFound) -> Void in
+                
+                //ToDo: How do you modify this to return all rooms found related to the users?
+                guard let room = roomsFound?.first else{
+                    completion(nil)
+                    return
+                }
+                
+                completion([room])
+                
+            })
+        })
+    }
+    
+    func createNewChatRoom(_ ownerUUID: String, peerToJoinUUID: String, roomName: String, completion : (_ room:Room?) -> ()){
+        
+        let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: appDelagate.coreDataManager.managedObjectContext) as! Room
+        
+        findPeers([ownerUUID, peerToJoinUUID], completion: {
+            (peersFound) -> Void in
+            
+            guard let peers = peersFound else{
+                discard()
+                completion(nil)
+                return
+            }
+            
+            var owner:Peer?
+            //Owner has to be one of the peers found
+            for peer in peers{
+                if peer.peerUUID == appDelagate.peerUUID{
+                    owner = peer
+                    break
+                }
+            }
+            
+            guard let foundOwner = owner else{
+                discard()
+                completion(nil)
+                return
+            }
+            
+            //Found all the peers needed, can save and move on
+            if peers.count == 2{
+                newRoom.createNew(roomName, owner: foundOwner)
+                newRoom.addToPeers(Set(peers.map { $0 }))
+                
+                if save(){
+                    completion(newRoom)
+                }else{
+                    print("Could not save newEntity for Room - \(roomName), with owner - \(ownerUUID)")
+                    discard()
+                    completion(nil)
+                }
+               
+            }else{
+                //The peer we are trying to add isn't in CoreData
+                guard let peerHash = peerUUIDHash[peerToJoinUUID] else{
+                    discard()
+                    completion(nil)
+                    return
+                }
+                
+                guard let peerName = appDelagate.mpcManager.getPeerDisplayName(peerHash) else{
+                    discard()
+                    completion(nil)
+                    return
+                }
+                //Store this peer
+                storeNewPeer(peerUUID: peerToJoinUUID, peerName: peerName, isConnectedToPeer: false, completion: {
+                    (storedPeer) -> Void in
+                    
+                    guard let peer = storedPeer else{
+                        discard()
+                        completion(nil)
+                        return
+                    }
+                    
+                    newRoom.createNew(roomName, owner: foundOwner)
+                    newRoom.addToPeers(foundOwner)
+                    newRoom.addToPeers(peer)
+                    
+                    if save(){
+                        completion(newRoom)
+                    }else{
+                        print("Could not save newEntity for Room - \(roomName), with owner - \(ownerUUID)")
+                        discard()
+                        completion(nil)
+                    }
+                })
+            }
         })
     }
     

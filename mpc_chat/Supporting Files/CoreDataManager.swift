@@ -8,12 +8,17 @@
 //  Starter code: https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/CoreData/InitializingtheCoreDataStack.html#//apple_ref/doc/uid/TP40001075-CH4-SW1
 
 import Foundation
-import UIKit
 import CoreData
 
 class CoreDataManager: NSObject {
     
     var managedObjectContext: NSManagedObjectContext
+    fileprivate var isReady = false
+    var isCoreDataReady:Bool{
+        get{
+            return isReady
+        }
+    }
     
     init(databaseName: String, completionClosure: @escaping () -> ()) {
         
@@ -64,7 +69,6 @@ class CoreDataManager: NSObject {
                 fatalError("Unresolved error \(wrappedError), \(wrappedError.userInfo)")
             }
         }
-        
         super.init()
     }
     
@@ -72,12 +76,19 @@ class CoreDataManager: NSObject {
         _ = saveContext()
     }
     
+    @objc func handleCoreDataInitializedReceived(_ notification: NSNotification) {
+        
+        isReady = true
+    }
+    
+    func setCoreDataAsReady()->(){
+        isReady = true
+    }
+    
     func queryCoreDataPeers(_ queryCompoundPredicate : NSCompoundPredicate, sortBy: String?=nil, inDescendingOrder: Bool=true, completion: (_ returnObjects: [Peer]?) -> Void) {
-        
-        let appDelagate = UIApplication.shared.delegate as! AppDelegate
-        
+       
         //Don't execute if not available
-        if !appDelagate.isCoreDataAvailable{
+        if !isReady{
             print("Warning in CoreDataManager.queryCoreDataPeers(), attempting to access CoreData when it's not ready")
             completion(nil)
             return
@@ -122,10 +133,8 @@ class CoreDataManager: NSObject {
     
     func queryCoreDataRooms(_ queryCompoundPredicate : NSCompoundPredicate, sortBy: String?=nil, inDescendingOrder: Bool=true, completion: (_ returnObjects: [Room]?) -> Void) {
         
-        let appDelagate = UIApplication.shared.delegate as! AppDelegate
-        
         //Don't execute if not available
-        if !appDelagate.isCoreDataAvailable{
+        if !isReady{
             print("Warning in CoreDataManager.queryCoreDataRooms(), attempting to access CoreData when it's not ready")
             completion(nil)
             return
@@ -170,10 +179,8 @@ class CoreDataManager: NSObject {
     
     func queryCoreDataMessages(_ queryCompoundPredicate : NSCompoundPredicate, sortBy: String?=nil, inDescendingOrder: Bool=true, completion: (_ returnObjects: [Message]?) -> Void) {
         
-        let appDelagate = UIApplication.shared.delegate as! AppDelegate
-        
         //Don't execute if not available
-        if !appDelagate.isCoreDataAvailable{
+        if !isReady{
             print("Warning in CoreDataManager.queryCoreDataMessages(), attempting to access CoreData when it's not ready")
             completion(nil)
             return

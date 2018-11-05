@@ -219,35 +219,21 @@ extension MPCManager: MCSessionDelegate {
         
         switch state{
         case .connected:
-            stopAdvertising()
             print("Connected to \(peerID.displayName) with hash \(peerID.hash) in session \(session)")
             managerDelegate?.connectedWithPeer(peerID.hash, peerName: peerID.displayName)
             
         case .connecting:
-            stopAdvertising()
             print("Connecting to \(peerID.displayName) with hash \(peerID.hash) in session \(session)")
             
             
         case .notConnected:
-            startAdvertising() //Only advertise when not connecting/connected
             print("Not connected to \(peerID.displayName) with hash \(peerID.hash) in session  \(session)")
-            /*let messageDictionary: [String: String] = [kCommunicationsMessageContentTerm: kCommunicationsLostConnectionTerm]
-            let dataToSend = NSKeyedArchiver.archivedData(withRootObject: messageDictionary)
-            let dictionary: [String: Any] = [kCommunicationsDataTerm : dataToSend, kCommunicationsFromPeerTerm: peerID.displayName]
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationMPCDataReceived), object: dictionary)
-            */
+            
             messageDelegate?.lostPeer(peerID.hash, peerName: peerID.displayName)
         }
     }
     
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
-        
-        /*let dictionary: [String: Any] = [
-            kCommunicationsDataTerm: data,
-            kCommunicationsFromPeerTerm: peerID.hash
-        ]
-        
-        NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationMPCDataReceived), object: dictionary)*/
         
         //DO NOT remove the following lines, they are needed to receive Messages from peer
         messageDelegate?.messageReceived(peerID.hash, data: data)
@@ -286,13 +272,7 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
     func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
         
         foundPeers.removeValue(forKey: peerID.hash)
-        /*
-        let messageDictionary: [String: String] = [kCommunicationsMessageContentTerm: kCommunicationsLostConnectionTerm]
-        let dataToSend = NSKeyedArchiver.archivedData(withRootObject: messageDictionary)
-        let dictionary: [String: Any] = [kCommunicationsDataTerm : dataToSend, kCommunicationsFromPeerTerm: peerID.displayName]
-        //NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationMPCDisconnetion), object: dictionary)*/
         messageDelegate?.lostPeer(peerID.hash, peerName: peerID.displayName)
-        
         managerDelegate?.lostPeer(peerID.hash)
     }
     

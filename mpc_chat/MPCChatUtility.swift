@@ -22,7 +22,7 @@ class MPCChatUtility {
             print("Generated new UUID: \(returnUUID!) and saved to user defaults")
         }else{
             //Get the data available
-            guard let uuid = UserDefaults.standard.value(forKey: kPeerID) as? String else{
+            guard let uuid = UserDefaults.standard.value(forKey: kAdvertisingUUID) as? String else{
                 print("Error in MPCChatUtility.getmyUserUUID(), could not get String from user defaults")
                 return nil
             }

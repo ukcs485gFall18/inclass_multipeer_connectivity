@@ -87,6 +87,7 @@
                                                 <constraint firstItem="roI-Tj-zMF" firstAttribute="leading" secondItem="2zY-jl-dZo" secondAttribute="trailing" constant="3" id="NBu-ks-Z06"/>
                                                 <constraint firstItem="PbI-aP-yzQ" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="8FJ-4X-78K" secondAttribute="trailing" constant="8" symbolic="YES" id="Znt-5I-pLz"/>
                                                 <constraint firstItem="roI-Tj-zMF" firstAttribute="trailing" secondItem="PbI-aP-yzQ" secondAttribute="trailing" id="bkB-8W-Wwy"/>
+                                                <constraint firstItem="2zY-jl-dZo" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="0NF-37-nxe" secondAttribute="trailing" constant="8" symbolic="YES" id="c7h-Ud-DWv"/>
                                                 <constraint firstItem="2zY-jl-dZo" firstAttribute="centerY" secondItem="roI-Tj-zMF" secondAttribute="centerY" id="jae-Tk-4uo"/>
                                                 <constraint firstItem="8FJ-4X-78K" firstAttribute="top" secondItem="IpU-Wp-P36" secondAttribute="top" constant="6" id="k5Z-sf-UVd"/>
                                                 <constraint firstItem="7lH-8b-iGe" firstAttribute="leading" secondItem="8FJ-4X-78K" secondAttribute="leading" id="odk-WK-lKL"/>
@@ -148,7 +149,7 @@
                     <connections>
                         <outlet property="browserSegment" destination="aYI-UW-vHo" id="69r-J5-bWn"/>
                         <outlet property="tblPeers" destination="nDR-bP-Mt4" id="Oou-H0-EUM"/>
-                        <segue destination="vpC-FC-MdX" kind="presentation" identifier="kSegueChat" id="fVf-xH-pkt"/>
+                        <segue destination="vpC-FC-MdX" kind="presentation" identifier="idSegueChat" id="fVf-xH-pkt"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>

@@ -60,9 +60,6 @@ class ChatViewController: UIViewController {
         tblChat.estimatedRowHeight = 60.0
         tblChat.rowHeight = UITableView.automaticDimension
         
-        //NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleMPCChatReceivedDataWithNotification(_:)), name: Notification.Name(rawValue: kNotificationMPCDataReceived), object: nil)
-        //NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleMPCChatReceivedDisconnectionWithNotification(_:)), name: Notification.Name(rawValue: kNotificationMPCDisconnetion), object: nil)
-        
     }
 
     override func didReceiveMemoryWarning() {
@@ -101,89 +98,7 @@ class ChatViewController: UIViewController {
             tblChat.scrollToRow(at: NSIndexPath(row: messagesArray.count - 1, section: 0) as IndexPath, at: UITableView.ScrollPosition.bottom, animated: true)
         }
     }
-    /*
-    @objc func handleMPCChatReceivedDataWithNotification(_ notification: NSNotification) {
-        let receivedDataDictionary = notification.object as! Dictionary<String, AnyObject>
-        
-        //Extract the data and the source peer from the received dictionary
-        let data = receivedDataDictionary[kCommunicationsDataTerm] as? Data
-        let fromPeer = receivedDataDictionary[kCommunicationsFromPeerTerm] as! String
-        
-        //Convert the data (NSData) into a Dictionary object
-        let dataDictionary = NSKeyedUnarchiver.unarchiveObject(with: data!) as! [String:String]
-        
-        //Check if there's an entry with the kCommunicationsMessageContentTerm key
-        if let message = dataDictionary[kCommunicationsMessageContentTerm]{
-            
-            if message != kCommunicationsEndConnectionTerm  {
-                //Create a new dictioary and ser the sender and the received message to it
-                let messageDictionary: [String: String] = [kCommunicationsSenderTerm: fromPeer, kCommunicationsMessageContentTerm: message]
-                
-                messagesArray.append(messageDictionary)
-                
-                //Reload the tableview data and scroll to the bottom using the main thread
-                OperationQueue.main.addOperation({ () -> Void in
-                    self.updateTableview()
-                })
-            }else{
-                let alert = UIAlertController(title: "", message: "\(fromPeer) ended this chat.", preferredStyle: UIAlertController.Style.alert)
-                
-                let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-                    self.appDelegate.mpcManager.disconnect()
-                    self.dismiss(animated: true, completion: nil)
-                }
-                
-                alert.addAction(doneAction)
-                
-                OperationQueue.main.addOperation({ () -> Void in
-                    self.present(alert, animated: true, completion: nil)
-            
-                })
-            }
-        }
-    }
     
-    @objc func handleMPCChatReceivedDisconnectionWithNotification(_ notification: NSNotification) {
-        let receivedDataDictionary = notification.object as! [String: Any]
-        
-        //Extract the data and the source peer from the received dictionary
-        let data = receivedDataDictionary[kCommunicationsDataTerm ] as? Data
-        let fromPeer = receivedDataDictionary[kCommunicationsFromPeerTerm] as! String
-        
-        //Convert the data (NSData) into a Dictionary object
-        let dataDictionary = NSKeyedUnarchiver.unarchiveObject(with: data!) as! [String:String]
-        
-        //Check if there's an entry with the kCommunicationsMessageContentTerm key
-        if let message = dataDictionary[kCommunicationsMessageContentTerm]{
-            
-            if message != kCommunicationsLostConnectionTerm  {
-                //Create a new dictioary and ser the sender and the received message to it
-                let messageDictionary: [String: String] = [kCommunicationsSenderTerm: fromPeer, kCommunicationsMessageContentTerm: message]
-                
-                messagesArray.append(messageDictionary)
-                
-                //Reload the tableview data and scroll to the bottom using the main thread
-                OperationQueue.main.addOperation({ () -> Void in
-                    self.updateTableview()
-                })
-            }else{
-                let alert = UIAlertController(title: "", message: "Connections was lost with \(fromPeer)", preferredStyle: UIAlertController.Style.alert)
-                
-                let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-                    self.appDelegate.mpcManager.disconnect()
-                    self.appDelegate.coreDataManager.saveContext()
-                    self.dismiss(animated: true, completion: nil)
-                }
-                
-                alert.addAction(doneAction)
-                
-                OperationQueue.main.addOperation({ () -> Void in
-                    self.present(alert, animated: true, completion: nil)
-                })
-            }
-        }
-    }
-    */
 }
 
 extension ChatViewController: UITextFieldDelegate {
@@ -207,16 +122,21 @@ extension ChatViewController: UITextFieldDelegate {
             ]
             
             messagesToDisplay.append(message)
-            self.updateTableview()
             
-            let connectedPeers = appDelegate.mpcManager.getPeersConnectedTo()
-            
-            if appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
+            OperationQueue.main.addOperation{ () -> Void in
+                self.updateTableview()
                 
-                print("Sent message \(message.content) to room \(thisRoom.name)")
+                let connectedPeers = self.appDelegate.mpcManager.getPeersConnectedTo()
                 
-            }else{
-                print("Couldn't send message \(message.content) to room \(thisRoom.name)")
+                OperationQueue.main.addOperation{ () -> Void in
+                    if self.appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
+                        
+                        print("Sent message \(message.content) to room \(thisRoom.name)")
+                        
+                    }else{
+                        print("Couldn't send message \(message.content) to room \(thisRoom.name)")
+                    }
+                }
             }
         })
         
@@ -231,20 +151,31 @@ extension ChatViewController: MPCManagerMessageDelegate {
     
     func lostPeer(_ peerHash: Int, peerName: String) {
         
-        
-        
-        let alert = UIAlertController(title: "", message: "Connections was lost with \(peerName)", preferredStyle: UIAlertController.Style.alert)
-        
-        let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-            _ = self.model.save()
-            self.dismiss(animated: true, completion: nil)
+        guard let thisRoom = room else{
+            return
         }
         
-        alert.addAction(doneAction)
-        
-        OperationQueue.main.addOperation({ () -> Void in
-            self.present(alert, animated: true, completion: nil)
+        //Check to see if this is a peer we were connected to
+        model.lostPeer(peerHash, room: thisRoom, completion: {
+            (success) -> Void in
+            
+            if success{
+                let alert = UIAlertController(title: "", message: "Connections was lost with \(peerName)", preferredStyle: UIAlertController.Style.alert)
+                
+                let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
+                    _ = self.model.save()
+                    self.dismiss(animated: true, completion: nil)
+                }
+                
+                alert.addAction(doneAction)
+                
+                OperationQueue.main.addOperation({ () -> Void in
+                    self.present(alert, animated: true, completion: nil)
+                })
+            }
+            
         })
+        
     }
     
     func messageReceived(_ fromPeerHash:Int, data: Data) {
@@ -331,10 +262,10 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
         var senderColor: UIColor
         
         if message.owner.peerUUID == appDelegate.peerUUID{
-            senderLabelText = "I said:"
+            senderLabelText = "I said"
             senderColor = UIColor.purple
         }else{
-            senderLabelText = message.owner.peerName + " said:"
+            senderLabelText = message.owner.peerName + " said"
             senderColor = UIColor.orange
         }
         

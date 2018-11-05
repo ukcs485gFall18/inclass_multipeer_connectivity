@@ -132,7 +132,6 @@ class MPCManager: NSObject {
         
         for peer in session.connectedPeers{
             connectedpeerHashs.append(peer.hash)
-            
         }
         
         return connectedpeerHashs

@@ -237,6 +237,11 @@ extension BrowserViewController: MPCManagerDelegate{
     
     func invitationWasReceived(_ fromPeerHash: Int, additionalInfo: [String: Any], completion: @escaping (_ fromPeer: Int, _ accept: Bool) ->Void) {
         
+        //If the user is connected to anyone, deny all invitations received
+        if appDelagate.mpcManager.getPeersConnectedTo().count > 0{
+            completion(fromPeerHash, false)
+        }
+        
         guard let roomUUID = additionalInfo[kBrowserPeerRoomUUID] as? String else{
             return
         }

@@ -51,6 +51,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		91078C7C2190B61200D634B1 /* mpc_chat 5.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "mpc_chat 5.xcdatamodel"; sourceTree = "<group>"; };
 		9119007D218237F100EB17A9 /* CoreDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataManager.swift; sourceTree = "<group>"; };
 		911900852182493000EB17A9 /* BrowserTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserTableViewCell.swift; sourceTree = "<group>"; };
 		9135EAB8218E2C1000E1D20C /* ChatModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModel.swift; sourceTree = "<group>"; };
@@ -644,12 +645,13 @@
 		918A49A221791F8D00B3DE31 /* mpc_chat.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				91078C7C2190B61200D634B1 /* mpc_chat 5.xcdatamodel */,
 				91D32667218605C1003C8096 /* mpc_chat 4.xcdatamodel */,
 				91D3266621855EDA003C8096 /* mpc_chat 3.xcdatamodel */,
 				B5FCA00D218256B000263882 /* mpc_chat 2.xcdatamodel */,
 				918A49A321791F8D00B3DE31 /* mpc_chat.xcdatamodel */,
 			);
-			currentVersion = 91D32667218605C1003C8096 /* mpc_chat 4.xcdatamodel */;
+			currentVersion = 91078C7C2190B61200D634B1 /* mpc_chat 5.xcdatamodel */;
 			path = mpc_chat.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

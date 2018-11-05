@@ -197,7 +197,7 @@ class BrowserViewController: UIViewController {
             let viewController = segue.destination as! ChatViewController
             
             viewController.room = roomToJoin
-            viewController.model = ChatModel(peerUUIDHashDictionary: model.peerUUIDHash, peerHashUUIDDictionary: model.peerHashUUID)
+            viewController.model = ChatModel(peer: model.getPeer, peerUUIDHashDictionary: model.getPeerUUIDHashDictionary, peerHashUUIDDictionary: model.getPeerHashUUIDDictionary)
             viewController.isConnected = true
         }
     }

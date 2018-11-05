@@ -12,17 +12,24 @@ import CoreData
 
 class ChatModel: NSObject{
     
-    let appDelagate = UIApplication.shared.delegate as! AppDelegate
-    var peerUUIDHash:[String:Int]!
-    var peerHashUUID:[Int:String]!
+    fileprivate let appDelagate = UIApplication.shared.delegate as! AppDelegate
+    fileprivate var peerUUIDHash:[String:Int]!
+    fileprivate var peerHashUUID:[Int:String]!
+    fileprivate var thisPeer:Peer!
+    
+    var getPeer: Peer{
+        get{
+            return thisPeer
+        }
+    }
     
     override init() {
         super.init()
     }
     
-    convenience init(peerUUIDHashDictionary: [String:Int], peerHashUUIDDictionary: [Int:String]) {
+    convenience init(peer: Peer, peerUUIDHashDictionary: [String:Int], peerHashUUIDDictionary: [Int:String]) {
         self.init()
-        
+        thisPeer = peer
         peerUUIDHash = peerUUIDHashDictionary
         peerHashUUID = peerHashUUIDDictionary
     }
@@ -156,11 +163,11 @@ class ChatModel: NSObject{
         })
     }
     
-    func save()->Bool{
+    fileprivate func save()->Bool{
         return appDelagate.coreDataManager.saveContext()
     }
     
-    func discard()->(){
+    fileprivate func discard()->(){
         appDelagate.coreDataManager.managedObjectContext.rollback()
     }
 }

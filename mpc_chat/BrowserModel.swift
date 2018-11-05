@@ -12,10 +12,28 @@ import CoreData
 
 class BrowserModel: NSObject{
     
-    var peerUUIDHash = [String:Int]()
-    var peerHashUUID = [Int:String]()
-    let appDelagate = UIApplication.shared.delegate as! AppDelegate
-    var thisPeer:Peer!
+    fileprivate var peerUUIDHash = [String:Int]()
+    fileprivate var peerHashUUID = [Int:String]()
+    fileprivate let appDelagate = UIApplication.shared.delegate as! AppDelegate
+    fileprivate var thisPeer:Peer!
+    
+    var getPeerUUIDHashDictionary:[String:Int]{
+        get{
+            return peerUUIDHash
+        }
+    }
+    
+    var getPeerHashUUIDDictionary:[Int:String]{
+        get{
+            return peerHashUUID
+        }
+    }
+    
+    var getPeer: Peer{
+        get{
+            return thisPeer
+        }
+    }
     
     var getPeersFoundUUIDs:[String]{
         get{
@@ -254,7 +272,7 @@ class BrowserModel: NSObject{
                     if save(){
                         completion(newRoom)
                     }else{
-                        print("Could not save newEntity for Room - \(roomName), with owner - \(self.thisPeer.peerUUID)")
+                        print("Could not save newEntity for Room - \(roomName), with owner - \(self.thisPeer.uuid)")
                         discard()
                         completion(nil)
                     }
@@ -269,7 +287,7 @@ class BrowserModel: NSObject{
             if save(){
                 completion(newRoom)
             }else{
-                print("Could not save newEntity for Room - \(roomName), with owner - \(self.thisPeer.peerUUID)")
+                print("Could not save newEntity for Room - \(roomName), with owner - \(self.thisPeer.uuid)")
                 discard()
                 completion(nil)
             }
@@ -361,11 +379,11 @@ class BrowserModel: NSObject{
         })
     }
     
-    func save()->Bool{
+    fileprivate func save()->Bool{
         return appDelagate.coreDataManager.saveContext()
     }
     
-    func discard()->(){
+    fileprivate func discard()->(){
         appDelagate.coreDataManager.managedObjectContext.rollback()
     }
 }

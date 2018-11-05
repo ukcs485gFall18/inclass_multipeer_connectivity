@@ -163,7 +163,6 @@ extension ChatViewController: MPCManagerMessageDelegate {
                 let alert = UIAlertController(title: "", message: "Connections was lost with \(peerName)", preferredStyle: UIAlertController.Style.alert)
                 
                 let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-                    _ = self.model.save()
                     self.dismiss(animated: true, completion: nil)
                 }
                 
@@ -261,7 +260,7 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
         var senderLabelText: String
         var senderColor: UIColor
         
-        if message.owner.peerUUID == appDelegate.peerUUID{
+        if message.owner.uuid == appDelegate.peerUUID{
             senderLabelText = "I said"
             senderColor = UIColor.purple
         }else{

@@ -30,7 +30,7 @@ public class Peer: NSManagedObject {
     }
     
     func createNew(_ peerUUID: String, peerName: String, connected:Bool) -> (){
-        self.peerUUID = peerUUID
+        self.uuid = peerUUID
         self.peerName = peerName
         
         created()

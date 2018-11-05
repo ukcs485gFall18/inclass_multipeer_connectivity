@@ -17,6 +17,7 @@ class BrowserViewController: UIViewController {
     let model = BrowserModel()
     let peersSeenBefore = [Int:Peer]()
     var roomToJoin:Room?
+    var peerUUIDHash = [String:Int]()
     
     @IBOutlet weak var tblPeers: UITableView!
     @IBOutlet weak var browserSegment: UISegmentedControl!
@@ -57,12 +58,16 @@ class BrowserViewController: UIViewController {
         // Note: use notification.object if you want to send any data with a posted Notification
         let receivedDataDictionary = notification.object as! [String: Any]
         
-        guard let peerHashValue = receivedDataDictionary[kBrowserPeerHashTerm] as? Int else{
-            print("Error in BrowserViewController.handleBrowserUserTappedCell(). peerHashValue not found")
+        guard let peerUUID = receivedDataDictionary[kBrowserpeerUUIDTerm] as? String else{
+            print("Error in BrowserViewController.handleBrowserUserTappedCell(). peerUUID not found")
             return
         }
         
-        guard let peerDisplayName = appDelagate.mpcManager.getPeerDisplayName(peerHashValue) else{
+        guard let peerHash = peerUUIDHash[peerUUID] else{
+            return
+        }
+        
+        guard let peerDisplayName = appDelagate.mpcManager.getPeerDisplayName(peerHash) else{
             return
         }
         
@@ -74,7 +79,7 @@ class BrowserViewController: UIViewController {
         
         let connectAction: UIAlertAction = UIAlertAction(title: actionTitle, style: UIAlertAction.Style.default) { (alertAction) -> Void in
             
-            self.model.createNewChatRoom(peerHashValue, roomName: roomName, completion: {
+            self.model.createNewChatRoom(peerUUID, roomName: roomName, completion: {
                 (createdRoom) -> Void in
                 
                 guard let room = createdRoom else{
@@ -90,7 +95,7 @@ class BrowserViewController: UIViewController {
                 ]
                 
                 //This method is used to send peer info they should used to connect
-                self.appDelagate.mpcManager.invitePeer(peerHashValue, additionalInfo: info)
+                self.appDelagate.mpcManager.invitePeer(peerHash, additionalInfo: info)
                 
             })
         }
@@ -146,6 +151,7 @@ class BrowserViewController: UIViewController {
             let viewController = segue.destination as! ChatViewController
             
             viewController.room = roomToJoin
+            viewController.model = ChatModel(peerUUIDHashDictionary: model.peerUUIDHash, peerHashUUIDDictionary: model.peerHashUUID)
             viewController.isConnected = true
         }
     }
@@ -156,11 +162,16 @@ class BrowserViewController: UIViewController {
 extension BrowserViewController: MPCManagerDelegate{
     
     //ToDo: Fix BrowserTable refreshing/reloading when MPC Manager refreshes and "Peers" is the segment selected
-    func foundPeer(_ peerHash: Int) {
+    func foundPeer(_ peerHash: Int, withInfo: [String:String]?) {
+        
+        model.foundPeer(peerHash, info: withInfo)
+        
         tblPeers.reloadData()
     }
     
     func lostPeer(_ peerHash: Int) {
+        
+        model.lostPeer(peerHash)
         tblPeers.reloadData()
     }
     
@@ -178,11 +189,15 @@ extension BrowserViewController: MPCManagerDelegate{
             return
         }
         
-        let alert = UIAlertController(title: "", message: "\(fromPeerHash) wants you to join \(roomName).", preferredStyle: UIAlertController.Style.alert)
+        guard let fromPeerUUID = model.getPeerUUIDFromHash(fromPeerHash) else{
+            return
+        }
+        
+        let alert = UIAlertController(title: "", message: "\(fromPeerName) wants you to join \(roomName).", preferredStyle: UIAlertController.Style.alert)
         
         let acceptAction: UIAlertAction = UIAlertAction(title: "Accept", style: UIAlertAction.Style.default)  {(alertAction) -> Void in
             
-            self.model.joinChatRoom(roomUUID, roomName: roomName, ownerHash: fromPeerHash, ownerName: fromPeerName, completion: {
+            self.model.joinChatRoom(roomUUID, roomName: roomName, ownerUUID: fromPeerUUID, ownerName: fromPeerName, completion: {
                 (roomFound) -> Void in
                 
                 if roomFound != nil{
@@ -212,7 +227,11 @@ extension BrowserViewController: MPCManagerDelegate{
     
     func connectedWithPeer(_ peerHash: Int, peerName: String) {
         
-        model.storeNewPeer(peerHash: peerHash, peerName: peerName, isConnectedToPeer: true, completion: {
+        guard let peerUUID = model.getPeerUUIDFromHash(peerHash) else{
+            return
+        }
+        
+        model.storeNewPeer(peerUUID: peerUUID, peerName: peerName, isConnectedToPeer: true, completion: {
             (stored) -> Void in
             
             if stored{
@@ -220,7 +239,7 @@ extension BrowserViewController: MPCManagerDelegate{
                     self.performSegue(withIdentifier: kSegueChat, sender: self)
                 }
             }else{
-                print("Couldn't store peer info, disconnecting from \(peerName) with hash \(peerHash)")
+                print("Couldn't store peer info, disconnecting from \(peerName) with uuid \(peerUUID)")
                 appDelagate.mpcManager.disconnect()
             }
         })
@@ -236,10 +255,15 @@ extension BrowserViewController: UITableViewDelegate, UITableViewDataSource{
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         //ToDo: One of these need to be changed show correct table count based on the segment selection
-        if browserSegment.selectedSegmentIndex == 0{
-            return appDelagate.mpcManager.foundPeerHashValues.count
-        }else{
-            return appDelagate.mpcManager.foundPeerHashValues.count
+        switch browserSegment.selectedSegmentIndex {
+        case 0:
+            return model.getPeersFoundUUIDs.count
+        case 1:
+            return model.getPeersFoundUUIDs.count
+        case 2:
+            return model.getPeersFoundUUIDs.count
+        default:
+            return 0
         }
     }
     
@@ -247,16 +271,20 @@ extension BrowserViewController: UITableViewDelegate, UITableViewDataSource{
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "idCellPeer") as! BrowserTableViewCell
         
-        //Store peerHash for Cell
-        cell.peerHash = appDelagate.mpcManager.foundPeerHashValues[indexPath.row]
+        //Store peerUUID for Cell
+        cell.peerUUID = model.getPeersFoundUUIDs[indexPath.row]
         
-        guard let displayName = appDelagate.mpcManager.getPeerDisplayName(cell.peerHash) else{
+        guard let peerHash = model.getPeerHashFromUUID(cell.peerUUID) else{
+            return cell
+        }
+        
+        guard let displayName = appDelagate.mpcManager.getPeerDisplayName(peerHash) else{
             return cell
         }
         
         cell.peerNameLabel?.text = displayName
     
-        model.lastTimeSeenPeer(cell.peerHash, completion: {
+        model.lastTimeSeenPeer(cell.peerUUID, completion: {
             (lastSeen, lastConnected) -> Void in
             
             guard let lastSeenPeer = lastSeen else{

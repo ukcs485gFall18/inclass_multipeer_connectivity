@@ -29,8 +29,8 @@ public class Peer: NSManagedObject {
         lastSeen = modifiedAt
     }
     
-    func createNew(_ peerHash: Int, peerName: String, connected:Bool) -> (){
-        self.peerHash = peerHash
+    func createNew(_ peerUUID: String, peerName: String, connected:Bool) -> (){
+        self.peerUUID = peerUUID
         self.peerName = peerName
         
         created()

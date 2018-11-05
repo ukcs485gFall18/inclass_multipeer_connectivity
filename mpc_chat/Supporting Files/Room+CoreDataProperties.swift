@@ -22,8 +22,8 @@ extension Room {
     @NSManaged public var name: String
     @NSManaged public var uuid: String
     @NSManaged public var messages: Set<Message>?
-    @NSManaged public var owner: Peer?
-    @NSManaged public var peers: Set<Peer>?
+    @NSManaged public var owner: Peer
+    @NSManaged public var peers: Set<Peer>
 
 }
 

@@ -10,6 +10,7 @@ import Foundation
 
 let kAppName                                            = "mpcchat"
 let kPeerID                                             = "uniquePeerIDs"
+let kAdvertisingUUID                                    = "uuid"
 let kDefaultsKeyFirstRun                                = "FirstRun"
 
 // MARK: - Segues
@@ -33,7 +34,7 @@ let kCommunicationsEndConnectionTerm                    = "_end_chat_"
 let kCommunicationsLostConnectionTerm                   = "_lost_connection_"
 
 // MARK: - Browser UI Dictionary terms
-let kBrowserPeerHashTerm                                = "peerHash"
+let kBrowserpeerUUIDTerm                                = "peerUUID"
 let kBrowserPeerRoomUUID                                = "roomUUID"
 let kBrowserPeerRoomName                                = "roomName"
 
@@ -44,7 +45,7 @@ let kCoreDataDBName                                     = "mpc_chatDB"
 let kCoreDataEntityPeer                                 = "Peer"
 let kCoreDataPeerAttributeCreatedAt                     = "createdAt"
 let kCoreDataPeerAttributeModifiedAt                    = "modifiedAt"
-let kCoreDataPeerAttributePeerHash                      = "peerHash"
+let kCoreDataPeerAttributepeerUUID                      = "peerUUID"
 let kCoreDataPeerAttributePeerName                      = "peerName"
 let kCoreDataPeerAttributeLastConnected                 = "lastConnected"
 let kCoreDataPeerAttributeLastSeen                      = "lastSeen"

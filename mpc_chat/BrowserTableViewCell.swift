@@ -15,7 +15,7 @@ class BrowserTableViewCell: UITableViewCell {
     @IBOutlet weak var lastConnectedLabel: UILabel!
     @IBOutlet weak var lastSeenLabel: UILabel!
     
-    var peerHash = -1
+    var peerUUID = ""
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -28,7 +28,7 @@ class BrowserTableViewCell: UITableViewCell {
 
         if isSelected{
             // Configure the view for the selected state
-            let info: [String:Any] = [kBrowserPeerHashTerm: peerHash]
+            let info: [String:Any] = [kBrowserpeerUUIDTerm: peerUUID]
             let notification = Notification(name: .init(kNotificationBrowserUserTappedCell), object: info, userInfo: nil)
             
             NotificationCenter.default.post(notification)

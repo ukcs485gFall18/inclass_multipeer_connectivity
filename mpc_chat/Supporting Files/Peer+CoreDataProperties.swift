@@ -21,7 +21,7 @@ extension Peer {
     @NSManaged public var lastConnected: Date?
     @NSManaged public var lastSeen: Date
     @NSManaged public var modifiedAt: Date
-    @NSManaged public var peerHash: Int
+    @NSManaged public var peerUUID: String
     @NSManaged public var peerName: String
     @NSManaged public var messages: Set<Message>?
     @NSManaged public var rooms: Set<Room>?

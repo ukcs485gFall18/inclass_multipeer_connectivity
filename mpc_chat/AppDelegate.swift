@@ -22,6 +22,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var mpcManager: MPCManager!
     var coreDataManager:CoreDataManager!
     var isCoreDataAvailable = false
+    var peerUUID = ""
+    var peerDisplayName = ""
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -30,6 +32,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if (UserDefaults.standard.object(forKey: kDefaultsKeyFirstRun) == nil){
             
             //Set all default values for first run
+            UserDefaults.standard.setValue(nil, forKey: kAdvertisingUUID)
             UserDefaults.standard.setValue(nil, forKey: kPeerID)
             
             //This is no longer the first run
@@ -44,7 +47,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
         })
         
-        self.mpcManager = MPCManager()
+        peerDisplayName = UIDevice.current.name
+        
+        guard let discovery = MPCChatUtility.buildAdvertisingDictionary() else{
+            return false
+        }
+        
+        guard let uuid = discovery[kAdvertisingUUID] else {
+            return false
+        }
+        
+        peerUUID = uuid
+        
+        self.mpcManager = MPCManager(kAppName, advertisingName: peerDisplayName, discoveryInfo: discovery)
         
         return true
     }

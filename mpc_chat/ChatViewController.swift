@@ -15,10 +15,9 @@ class ChatViewController: UIViewController {
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
     var messagesArray = [[String:String]]()
     var messagesToDisplay = [Message]()
-    let model = ChatModel()
+    var model = ChatModel() //This initialization is replaced by the BrowserView segue preperation
     var room: Room?
     var isConnected = false
-    var myPeerHash = -1
 
     @IBOutlet weak var txtChat: UITextField!
     @IBOutlet weak var tblChat: UITableView!
@@ -43,7 +42,6 @@ class ChatViewController: UIViewController {
             tblChat.reloadData()
         })
         
-        myPeerHash = appDelegate.mpcManager.getMyPeerInfo().0
     }
     
     override func viewDidLoad() {
@@ -196,7 +194,7 @@ extension ChatViewController: UITextFieldDelegate {
             return true
         }
         
-        model.storeNewMessage(content: textField.text!, fromPeer: myPeerHash, inRoom: thisRoom, completion: {
+        model.storeNewMessage(content: textField.text!, fromPeer: appDelegate.peerUUID, inRoom: thisRoom, completion: {
             (messageStored) -> Void in
             
             guard let message = messageStored else{
@@ -232,6 +230,8 @@ extension ChatViewController: UITextFieldDelegate {
 extension ChatViewController: MPCManagerMessageDelegate {
     
     func lostPeer(_ peerHash: Int, peerName: String) {
+        
+        
         
         let alert = UIAlertController(title: "", message: "Connections was lost with \(peerName)", preferredStyle: UIAlertController.Style.alert)
         
@@ -273,7 +273,11 @@ extension ChatViewController: MPCManagerMessageDelegate {
                 return
             }
             
-            model.storeNewMessage(uuid, content: message, fromPeer: fromPeerHash, inRoom: thisRoom, completion: {
+            guard let fromPeerUUID = model.getPeerUUIDFromHash(fromPeerHash) else{
+                return
+            }
+            
+            model.storeNewMessage(uuid, content: message, fromPeer: fromPeerUUID, inRoom: thisRoom, completion: {
                 (messageReceived) -> Void in
                 
                 guard let message = messageReceived else{
@@ -326,7 +330,7 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
         var senderLabelText: String
         var senderColor: UIColor
         
-        if message.owner.peerHash == myPeerHash{
+        if message.owner.peerUUID == appDelegate.peerUUID{
             senderLabelText = "I said:"
             senderColor = UIColor.purple
         }else{

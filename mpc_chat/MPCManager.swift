@@ -15,7 +15,7 @@ import MultipeerConnectivity
 
 protocol MPCManagerDelegate {
     
-    func foundPeer(_ peerHash: Int)
+    func foundPeer(_ peerHash: Int, withInfo: [String: String]?)
     
     func lostPeer(_ peerHash: Int)
     
@@ -42,12 +42,9 @@ class MPCManager: NSObject {
     fileprivate var advertiser: MCNearbyServiceAdvertiser!
     fileprivate var foundPeers = [Int:MCPeerID]()
     fileprivate var isAdvertising = false
-    
-    var foundPeerHashValues: [Int]{
-        get {
-            return foundPeers.keys.filter({$0 is Int})
-        }
-    }
+    fileprivate var myServiceType:String!
+    fileprivate var myAdvertisingName:String!
+    fileprivate var myDiscoveryInfo:[String:String]?
     
     var getIsAdvertising:Bool{
         get {
@@ -55,26 +52,34 @@ class MPCManager: NSObject {
         }
     }
     
-    override init(){
-   
+    //Don't call, won't start up MPC
+    override init() {
         super.init()
+    }
+    
+    convenience init(_ serviceType: String, advertisingName: String, discoveryInfo: [String:String]) {
         
-        //Initialize variables 
-        myPeer = getMCPeerID(UIDevice.current.name)
+        self.init()
+        myServiceType = serviceType
+        myAdvertisingName = advertisingName
+        myDiscoveryInfo = discoveryInfo
+        
+        //Initialize variables
+        myPeer = getMCPeerID(advertisingName)
         
         //If you want to have security, need to create securityIdentity. This is not straight-forward process
         session = MCSession(peer: myPeer, securityIdentity: nil, encryptionPreference: MCEncryptionPreference.required)
         session.delegate = self
         
         //The name of your serviceType should be unique to your application
-        browser = MCNearbyServiceBrowser(peer: myPeer, serviceType: kAppName)
+        browser = MCNearbyServiceBrowser(peer: myPeer, serviceType: myServiceType)
         browser.delegate = self
         browser.startBrowsingForPeers()
         
         /*
          Hint: When you need to add new information to advertiser. Stop it, and reinitialize. If you need to include other information when peers are discovered, add it to discoveryInfo
          */
-        advertiser = MCNearbyServiceAdvertiser(peer: myPeer, discoveryInfo: nil, serviceType: kAppName)
+        advertiser = MCNearbyServiceAdvertiser(peer: myPeer, discoveryInfo: myDiscoveryInfo, serviceType: myServiceType)
         advertiser.delegate = self
         startAdvertising()
         
@@ -83,11 +88,6 @@ class MPCManager: NSObject {
     }
     
     //MARK: Public methods for managerDelegates
-    
-    func getMyPeerInfo()->(Int,String){
-        return (myPeer.hash, myPeer.displayName)
-    }
-    
     func stopAdvertising(){
         advertiser.stopAdvertisingPeer()
         isAdvertising = false
@@ -128,24 +128,25 @@ class MPCManager: NSObject {
     
     func getPeersConnectedTo()->[Int]{
         
-        var connectedPeerHashes = [Int]()
+        var connectedpeerHashs = [Int]()
         
         for peer in session.connectedPeers{
-            connectedPeerHashes.append(peer.hash)
+            connectedpeerHashs.append(peer.hash)
+            
         }
         
-        return connectedPeerHashes
+        return connectedpeerHashs
     }
     
     func disconnect(){
         session.disconnect()
     }
     
-    func sendData(dictionaryWithData dictionary: Dictionary<String,String>, toPeers peerHashes: [Int]) -> Bool {
+    func sendData(dictionaryWithData dictionary: Dictionary<String,String>, toPeers peerHashs: [Int]) -> Bool {
         
         //Prepare to send to all interested peers who are still connected
         var peersConnected = [MCPeerID]()
-        for hash in peerHashes{
+        for hash in peerHashs{
             if let peerFound = foundPeers[hash] {
                 peersConnected.append(peerFound)
             }
@@ -174,7 +175,6 @@ class MPCManager: NSObject {
         
         let peerIDKey = displayName
         let peerID:MCPeerID!
-        
         
         if (UserDefaults.standard.object(forKey: kPeerID) == nil){
             //Create new MCPeerID
@@ -279,7 +279,7 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
         
         foundPeers[peerID.hash] = peerID
-        managerDelegate?.foundPeer(peerID.hash)
+        managerDelegate?.foundPeer(peerID.hash, withInfo: info)
         
     }
     

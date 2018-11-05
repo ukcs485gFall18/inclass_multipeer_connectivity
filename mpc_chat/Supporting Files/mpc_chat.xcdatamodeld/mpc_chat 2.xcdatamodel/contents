@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14315.18" systemVersion="18A391" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14460.32" systemVersion="18A391" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="Peers" representedClassName=".Peers" syncable="YES">
         <attribute name="lastConnected" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
         <attribute name="lastSeen" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
-        <attribute name="peerHash" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="peerName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="peerUUID" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
     </entity>
     <elements>
-        <element name="Peers" positionX="-54" positionY="-9" width="128" height="30"/>
+        <element name="Peers" positionX="0" positionY="0" width="0" height="0"/>
     </elements>
 </model>

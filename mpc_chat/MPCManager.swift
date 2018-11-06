@@ -209,6 +209,20 @@ class MPCManager: NSObject {
         
         return peerID
     }
+    
+    fileprivate func isThisAConnectedPeer(_ peer:MCPeerID)-> Bool{
+        
+        let connectedPeers = session.connectedPeers
+        
+        //If this is a currently connected peer
+        for potentialPeer in connectedPeers{
+            if peer == potentialPeer{
+                return true
+            }
+        }
+        
+        return false
+    }
 
 }
 
@@ -227,8 +241,8 @@ extension MPCManager: MCSessionDelegate {
             
         case .notConnected:
             print("Not connected to \(peerID.displayName) with hash \(peerID.hash) in session  \(session)")
-            
             messageDelegate?.lostPeer(peerID.hash, peerName: peerID.displayName)
+            managerDelegate?.lostPeer(peerID.hash)
         }
     }
     
@@ -271,8 +285,13 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
     func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
         
         foundPeers.removeValue(forKey: peerID.hash)
-        messageDelegate?.lostPeer(peerID.hash, peerName: peerID.displayName)
-        managerDelegate?.lostPeer(peerID.hash)
+        
+        if isThisAConnectedPeer(peerID) {
+            messageDelegate?.lostPeer(peerID.hash, peerName: peerID.displayName)
+        }else{
+            //Lost a peer that was in browser
+            managerDelegate?.lostPeer(peerID.hash)
+        }
     }
     
     func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {

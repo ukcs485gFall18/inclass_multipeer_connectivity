@@ -172,10 +172,16 @@ extension ChatViewController: MPCManagerMessageDelegate {
             (success) -> Void in
             
             if success{
-                let alert = UIAlertController(title: "", message: "Connections was lost with \(peerName)", preferredStyle: UIAlertController.Style.alert)
+                let alert = UIAlertController(title: "", message: "\(peerName) left the chat", preferredStyle: UIAlertController.Style.alert)
                 
                 let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-                    self.dismiss(animated: true, completion: nil)
+                    
+                    //If you are the last one in the Chat, leave this room for now
+                    if self.appDelegate.mpcManager.getPeersConnectedTo().count < 2{
+                        OperationQueue.main.addOperation({ () -> Void in
+                            self.dismiss(animated: true, completion: nil)
+                        })
+                    }
                 }
                 
                 alert.addAction(doneAction)
@@ -234,6 +240,10 @@ extension ChatViewController: MPCManagerMessageDelegate {
             
         }else{
             //fromPeer want's to disconnect
+            print("\(fromPeer) is about to End this chat, prepare for disconnecton.")
+            
+            //Deprecated this, lostPeer will handle notification
+            /*
             let alert = UIAlertController(title: "", message: "\(fromPeer) ended this chat.", preferredStyle: UIAlertController.Style.alert)
             
             let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
@@ -244,7 +254,7 @@ extension ChatViewController: MPCManagerMessageDelegate {
             
             OperationQueue.main.addOperation({ () -> Void in
                 self.present(alert, animated: true, completion: nil)
-            })
+            })*/
         }
     }
     

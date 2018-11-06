@@ -60,6 +60,14 @@ class ChatViewController: UIViewController {
         tblChat.rowHeight = UITableView.automaticDimension
         
         self.hideKeyboardWhenTappedAround()
+        
+        if isConnected{
+            txtChat.isEnabled = true
+            txtChat.isHidden = false
+        }else{
+            txtChat.isEnabled = false
+            txtChat.isHidden = true
+        }
     }
 
     override func didReceiveMemoryWarning() {

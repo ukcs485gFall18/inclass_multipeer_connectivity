@@ -55,9 +55,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         peerUUID = uuid
         
         self.mpcManager = MPCManager(kAppName, advertisingName: peerDisplayName, discoveryInfo: discovery)
-        //DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
         
-        //})
         return true
     }
 

@@ -35,7 +35,7 @@ class BrowserViewController: UIViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleCoreDataInitializedReceived(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleCoreDataInitializedReceived(_:)), name: Notification.Name(rawValue: kNotificationCoreDataIsReady), object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleBrowserUserTappedCell(_:)), name: Notification.Name(rawValue: kNotificationBrowserUserTappedCell), object: nil)
 

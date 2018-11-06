@@ -12,6 +12,7 @@ import CoreData
 
 class CoreDataManager: NSObject {
     
+    static var sharedCoreDataManager = CoreDataManager(databaseName: kCoreDataDBName, completionClosure: {})
     var managedObjectContext: NSManagedObjectContext
     fileprivate var isReady = false
     var isCoreDataReady:Bool{
@@ -54,7 +55,11 @@ class CoreDataManager: NSObject {
                 try psc.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: storeURL, options: options)
                 
                 //The callback block is expected to complete the User Interface and therefore should be presented back on the main queue so that the user interface does not need to be concerned with which queue this call is coming from.
-                DispatchQueue.main.sync(execute: completionClosure)
+                DispatchQueue.main.sync(execute: {
+                    print("CoreData initialized")
+                    NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
+                    completionClosure()
+                })
                 
             } catch {
                 

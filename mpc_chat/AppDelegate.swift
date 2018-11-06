@@ -20,7 +20,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     
     var mpcManager: MPCManager!
-    var coreDataManager:CoreDataManager!
+    fileprivate var coreDataManager: CoreDataManager!
     var peerUUID = ""
     var peerDisplayName = ""
 
@@ -39,12 +39,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             UserDefaults.standard.synchronize()
         }
         
+        NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.handleCoreDataInitializedReceived(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
+        self.coreDataManager = CoreDataManager.sharedCoreDataManager
+        
+        /*
         coreDataManager = CoreDataManager(databaseName: kCoreDataDBName, completionClosure: {
         
             print("CoreData initialized")
             self.coreDataManager.setCoreDataAsReady()
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
-        })
+        })*/
         
         peerDisplayName = UIDevice.current.name
         
@@ -59,7 +63,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         peerUUID = uuid
         
         self.mpcManager = MPCManager(kAppName, advertisingName: peerDisplayName, discoveryInfo: discovery)
+        //DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
         
+        //})
         return true
     }
 
@@ -85,6 +91,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 
+    @objc func handleCoreDataInitializedReceived(_ notification: NSNotification) {
+        //Set flag
+        self.coreDataManager.setCoreDataAsReady()
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationCoreDataIsReady), object: nil)
+    }
 
 }
 

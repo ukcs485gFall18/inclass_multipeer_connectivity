@@ -14,6 +14,7 @@ class BrowserModel: NSObject{
     
     fileprivate var peerUUIDHash = [String:Int]()
     fileprivate var peerHashUUID = [Int:String]()
+    fileprivate let coreDataManager = CoreDataManager.sharedCoreDataManager
     fileprivate let appDelagate = UIApplication.shared.delegate as! AppDelegate
     fileprivate var thisPeer:Peer!
     var roomToJoin:Room?
@@ -45,15 +46,20 @@ class BrowserModel: NSObject{
     override init() {
         super.init()
         
-        NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationCoreDataIsReady), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
+        
     }
     
     //MARK: Private methods
     @objc fileprivate func handleCoreDataIsReady(_ notification: NSNotification){
         
-        //Ensure MPCManager is up and running
-        if (appDelagate.mpcManager == nil) || (!appDelagate.coreDataManager.isCoreDataReady){
+        if !coreDataManager.isCoreDataReady{
+            return
+        }
+        
+        //If already set, no need to do again
+        if self.thisPeer != nil{
             return
         }
         
@@ -71,7 +77,9 @@ class BrowserModel: NSObject{
             print("Saved my info to CoreData")
             
         })
+        
     }
+    
     
     fileprivate func findRooms(_ roomUUIDs: [String], completion : (_ roomsFound:[Room]?) -> ()){
         
@@ -80,7 +88,7 @@ class BrowserModel: NSObject{
         
         let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
         
-        appDelagate.coreDataManager.queryCoreDataRooms(compoundQuery, completion: {
+        coreDataManager.queryCoreDataRooms(compoundQuery, completion: {
             (rooms) -> Void in
             
             completion(rooms)
@@ -99,7 +107,7 @@ class BrowserModel: NSObject{
         
         var roomsToReturn = [Room]()
         
-        appDelagate.coreDataManager.queryCoreDataRooms(compoundQuery, sortBy: kCoreDataRoomAttributeModifiedAt, inDescendingOrder: true, completion: {
+        coreDataManager.queryCoreDataRooms(compoundQuery, sortBy: kCoreDataRoomAttributeModifiedAt, inDescendingOrder: true, completion: {
             (roomsFound) -> Void in
             
             if roomsFound != nil{
@@ -111,11 +119,11 @@ class BrowserModel: NSObject{
     }
     
     fileprivate func save()->Bool{
-        return appDelagate.coreDataManager.saveContext()
+        return coreDataManager.saveContext()
     }
     
     fileprivate func discard()->(){
-        appDelagate.coreDataManager.managedObjectContext.rollback()
+        coreDataManager.managedObjectContext.rollback()
     }
     
     
@@ -158,7 +166,7 @@ class BrowserModel: NSObject{
         
         let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
         
-        appDelagate.coreDataManager.queryCoreDataPeers(compoundQuery, sortBy: kCoreDataPeerAttributeLastConnected, inDescendingOrder: true, completion: {
+        coreDataManager.queryCoreDataPeers(compoundQuery, sortBy: kCoreDataPeerAttributeLastConnected, inDescendingOrder: true, completion: {
             
             (peersFound) -> Void in
             
@@ -171,7 +179,7 @@ class BrowserModel: NSObject{
             guard let peer = peers.first else{
                 
                 //If there are 0 found, this must be a new item that needs to be stored to the local database
-                let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: appDelagate.coreDataManager.managedObjectContext) as! Peer
+                let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: coreDataManager.managedObjectContext) as! Peer
                 
                 newPeer.createNew(peerUUID, peerName: peerName, connected: isConnectedToPeer)
                 
@@ -237,7 +245,7 @@ class BrowserModel: NSObject{
     
     func createNewChatRoom(_ ownerUUID: String, peerToJoinUUID: String, roomName: String, completion : (_ room:Room?) -> ()){
         
-        let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: appDelagate.coreDataManager.managedObjectContext) as! Room
+        let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: coreDataManager.managedObjectContext) as! Room
         
         BrowserModel.findPeers([peerToJoinUUID], completion: {
             (peersFound) -> Void in
@@ -310,7 +318,7 @@ class BrowserModel: NSObject{
             guard let oldRoom = rooms.first else{
                 
                 //If no room found, create a new room with the received roomUUID
-                let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: appDelagate.coreDataManager.managedObjectContext) as! Room
+                let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: coreDataManager.managedObjectContext) as! Room
                 newRoom.addToPeers(self.thisPeer)
                 
                 //Get the owner as a Peer
@@ -319,7 +327,7 @@ class BrowserModel: NSObject{
                     
                     guard let peer = peersFound?.first else{
                         //If this owner has never been saved before, need to save
-                        let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: appDelagate.coreDataManager.managedObjectContext) as! Peer
+                        let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: coreDataManager.managedObjectContext) as! Peer
                         
                         newPeer.createNew(ownerUUID, peerName: ownerName, connected: false)
                         newRoom.createNew(roomUUID, roomName: roomName, owner: newPeer)
@@ -360,7 +368,7 @@ class BrowserModel: NSObject{
                 
                 guard let peer = peersFound?.first else{
                     //If this peer has never been saved before, need to save to old room
-                    let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: appDelagate.coreDataManager.managedObjectContext) as! Peer
+                    let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: coreDataManager.managedObjectContext) as! Peer
                     
                     newPeer.createNew(ownerUUID, peerName: ownerName, connected: false)
                     oldRoom.addToPeers(newPeer)
@@ -391,14 +399,14 @@ class BrowserModel: NSObject{
     
     class func findPeers(_ peerUUIDs: [String], completion : (_ peersFound:[Peer]?) -> ()){
         
-        let appDelagate = UIApplication.shared.delegate as! AppDelegate
+        let coreDataManager = CoreDataManager.sharedCoreDataManager
         
         var predicateArray = [NSPredicate]()
         predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributepeerUUID) IN %@", peerUUIDs))
         
         let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
         
-        appDelagate.coreDataManager.queryCoreDataPeers(compoundQuery, completion: {
+        coreDataManager.queryCoreDataPeers(compoundQuery, completion: {
             (peers) -> Void in
             
             completion(peers)

@@ -18,7 +18,8 @@ let kSegueChat                                          = "idSegueChat"
 
 // MARK: - Local notifications
 let kNotificationMPCIsInitialized                       = "mpcIsInitializedNotification"
-let kNotificationCoreDataInitialized                    = "coreDataInitializedNotification"
+let kNotificationCoreDataInitialized                    = "coreDataInitializedNotification" //CoreData notifies appDelega
+let kNotificationCoreDataIsReady                        = "coreDataIsReadyNotification" //After setting CoreData flags, notifies everyone else
 let kNotificationBrowserUserTappedCell                  = "browserUserTappedCell"
 
 // MARK: - SendReceive Dictionary terms

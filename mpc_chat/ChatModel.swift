@@ -12,7 +12,7 @@ import CoreData
 
 class ChatModel: NSObject{
     
-    fileprivate let appDelagate = UIApplication.shared.delegate as! AppDelegate
+    fileprivate let coreDataManager = CoreDataManager.sharedCoreDataManager
     fileprivate var peerUUIDHash:[String:Int]!
     fileprivate var peerHashUUID:[Int:String]!
     fileprivate var thisPeer:Peer!
@@ -46,7 +46,7 @@ class ChatModel: NSObject{
         let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
         
         //This is how you find sorted data
-        appDelagate.coreDataManager.queryCoreDataMessages(compoundQuery, sortBy: kCoreDataMessageAttributeCreatedAt, inDescendingOrder: false, completion: {
+        coreDataManager.queryCoreDataMessages(compoundQuery, sortBy: kCoreDataMessageAttributeCreatedAt, inDescendingOrder: false, completion: {
             (messagesFound) -> Void in
             
             completion(messagesFound)
@@ -55,11 +55,11 @@ class ChatModel: NSObject{
     }
     
     fileprivate func save()->Bool{
-        return appDelagate.coreDataManager.saveContext()
+        return coreDataManager.saveContext()
     }
     
     fileprivate func discard()->(){
-        appDelagate.coreDataManager.managedObjectContext.rollback()
+        coreDataManager.managedObjectContext.rollback()
     }
     
     //MARK: Public methods
@@ -172,7 +172,7 @@ class ChatModel: NSObject{
                 return
             }
             
-            let newMessage = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityMessage, into: appDelagate.coreDataManager.managedObjectContext) as! Message
+            let newMessage = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityMessage, into: coreDataManager.managedObjectContext) as! Message
             
             newMessage.createNew(uuid, withContent: content, owner: peer)
             thisRoom.addToMessages(newMessage)

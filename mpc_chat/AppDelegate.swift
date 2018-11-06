@@ -42,14 +42,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.handleCoreDataInitializedReceived(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
         self.coreDataManager = CoreDataManager.sharedCoreDataManager
         
-        /*
-        coreDataManager = CoreDataManager(databaseName: kCoreDataDBName, completionClosure: {
-        
-            print("CoreData initialized")
-            self.coreDataManager.setCoreDataAsReady()
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
-        })*/
-        
         peerDisplayName = UIDevice.current.name
         
         guard let discovery = MPCChatUtility.buildAdvertisingDictionary() else{

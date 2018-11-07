@@ -5,8 +5,8 @@
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
         <attribute name="modifiedAt" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
         <attribute name="uuid" optional="YES" attributeType="String" syncable="YES"/>
-        <relationship name="owner" maxCount="1" deletionRule="Nullify" destinationEntity="Peer" inverseName="messages" inverseEntity="Peer" syncable="YES"/>
-        <relationship name="room" maxCount="1" deletionRule="Nullify" destinationEntity="Room" inverseName="messages" inverseEntity="Room" syncable="YES"/>
+        <relationship name="owner" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Peer" inverseName="messages" inverseEntity="Peer" syncable="YES"/>
+        <relationship name="room" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Room" inverseName="messages" inverseEntity="Room" syncable="YES"/>
     </entity>
     <entity name="Peer" representedClassName="Peer" syncable="YES">
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
@@ -25,12 +25,12 @@
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="uuid" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="messages" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Message" inverseName="room" inverseEntity="Message" syncable="YES"/>
-        <relationship name="owner" maxCount="1" deletionRule="Nullify" destinationEntity="Peer" inverseName="rooms" inverseEntity="Peer" syncable="YES"/>
-        <relationship name="peers" toMany="YES" deletionRule="Nullify" destinationEntity="Peer" inverseName="peersInRooms" inverseEntity="Peer" syncable="YES"/>
+        <relationship name="owner" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Peer" inverseName="rooms" inverseEntity="Peer" syncable="YES"/>
+        <relationship name="peers" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Peer" inverseName="peersInRooms" inverseEntity="Peer" syncable="YES"/>
     </entity>
     <elements>
-        <element name="Message" positionX="-27" positionY="63" width="128" height="133"/>
+        <element name="Message" positionX="-27" positionY="63" width="128" height="135"/>
         <element name="Peer" positionX="-54" positionY="-9" width="128" height="178"/>
-        <element name="Room" positionX="-54" positionY="-18" width="128" height="148"/>
+        <element name="Room" positionX="-54" positionY="-18" width="128" height="150"/>
     </elements>
 </model>

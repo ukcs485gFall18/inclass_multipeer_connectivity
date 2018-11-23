@@ -305,9 +305,10 @@ extension BrowserViewController: MPCManagerDelegate{
                 appDelagate.mpcManager.disconnect()
                 
             }else{
-                //Only segue if this view if the main view
-                if self.view.superview != nil {
-                    OperationQueue.main.addOperation{ () -> Void in
+                
+                OperationQueue.main.addOperation{ () -> Void in
+                    //Only segue if this view if the main view
+                    if self.view.superview != nil {
                         self.performSegue(withIdentifier: kSegueChat, sender: self)
                     }
                 }

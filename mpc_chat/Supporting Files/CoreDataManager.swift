@@ -81,7 +81,7 @@ class CoreDataManager: NSObject {
         _ = saveContext()
     }
     
-    @objc func handleCoreDataInitializedReceived(_ notification: NSNotification) {
+    @objc func handleCoreDataInitializedReceived(_ notification: Notification) {
         
         isReady = true
     }

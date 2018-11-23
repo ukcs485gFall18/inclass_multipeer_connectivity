@@ -21,8 +21,22 @@ class ChatViewController: UIViewController {
     @IBOutlet weak var txtChat: UITextField!
     @IBOutlet weak var tblChat: UITableView!
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+    //ToDo: Need to add a button the storyboard that when tapped, opens a subView or openning to BrowserViewController. Here the user keep see more peers around and add them to the chat. Note: Only owners should be able to add people to the Chat. If someone is not the owner, they can Browse, but tapping and adding a new user to the chat should be disabled
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Do any additional setup after loading the view.
+        appDelegate.mpcManager.messageDelegate = self
+        
+        tblChat.delegate = self
+        tblChat.dataSource = self
+        tblChat.estimatedRowHeight = 60.0
+        tblChat.rowHeight = UITableView.automaticDimension
+
+        txtChat.delegate = self
+        
+        self.hideKeyboardWhenTappedAround()
         
         model.getAllMessagesInRoom(completion: {
             (messagesFound) -> Void in
@@ -32,34 +46,13 @@ class ChatViewController: UIViewController {
             }
             
             messagesToDisplay = messages
-            tblChat.reloadData()
+            updateTableview()
         })
         
         roomNameTextField.text = model.getRoomName()
         
         //ToDo: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
         roomNameTextField.isEnabled = true
-    }
-    
-    //ToDo: Need to add a button the storyboard that when tapped, opens a subView or openning to BrowserViewController. Here the user keep see more peers around and add them to the chat. Note: Only owners should be able to add people to the Chat. If someone is not the owner, they can Browse, but tapping and adding a new user to the chat should be disabled
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        // Do any additional setup after loading the view.
-        appDelegate.mpcManager.messageDelegate = self
-        tblChat.delegate = self
-        tblChat.dataSource = self
-        
-        tblChat.estimatedRowHeight = 60.0
-        tblChat.rowHeight = UITableView.automaticDimension
-
-        txtChat.delegate = self
-        
-        tblChat.estimatedRowHeight = 60.0
-        tblChat.rowHeight = UITableView.automaticDimension
-        
-        self.hideKeyboardWhenTappedAround()
         
         if isConnected{
             txtChat.isEnabled = true
@@ -109,12 +102,16 @@ class ChatViewController: UIViewController {
         
     }
     
+    //Reload the tableview data and scroll to the bottom using the main thread
     func updateTableview(){
-        self.tblChat.reloadData()
         
-        if self.tblChat.contentSize.height > self.tblChat.frame.size.height {
-            tblChat.scrollToRow(at: NSIndexPath(row: messagesToDisplay.count - 1, section: 0) as IndexPath, at: UITableView.ScrollPosition.bottom, animated: true)
-        }
+        OperationQueue.main.addOperation({ () -> Void in
+            self.tblChat.reloadData()
+            
+            if self.tblChat.contentSize.height > self.tblChat.frame.size.height {
+                self.tblChat.scrollToRow(at: IndexPath(row: self.messagesToDisplay.count - 1, section: 0), at: UITableView.ScrollPosition.bottom, animated: true)
+            }
+        })
     }
     
 }
@@ -137,23 +134,21 @@ extension ChatViewController: UITextFieldDelegate {
             ]
             
             messagesToDisplay.append(message)
+            self.updateTableview()
+            
+            let roomName = self.model.getRoomName()
             
             OperationQueue.main.addOperation{ () -> Void in
-                self.updateTableview()
-                
+                //MultipeerConnectivity is throwing a copy on main thread warning, which is why we are going to the main thread
                 let connectedPeers = self.appDelegate.mpcManager.getPeersConnectedTo()
                 
-                OperationQueue.main.addOperation{ () -> Void in
-                    
-                    let roomName = self.model.getRoomName()
-                    
-                    if self.appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
-                        print("Sent message \(message.content) to room \(roomName)")
-                    }else{
-                        print("Couldn't send message \(message.content) to room \(roomName)")
-                    }
+                if self.appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
+                    print("Sent message \(message.content) to room \(roomName)")
+                }else{
+                    print("Couldn't send message \(message.content) to room \(roomName)")
                 }
             }
+            
         })
         
         //Update text field with nothing
@@ -232,29 +227,13 @@ extension ChatViewController: MPCManagerMessageDelegate {
                 
                 messagesToDisplay.append(message)
                 
-                //Reload the tableview data and scroll to the bottom using the main thread
-                OperationQueue.main.addOperation({ () -> Void in
-                    self.updateTableview()
-                })
+                self.updateTableview()
+                
             })
             
         }else{
             //fromPeer want's to disconnect
             print("\(fromPeer) is about to End this chat, prepare for disconnecton.")
-            
-            //Deprecated this, lostPeer will handle notification
-            /*
-            let alert = UIAlertController(title: "", message: "\(fromPeer) ended this chat.", preferredStyle: UIAlertController.Style.alert)
-            
-            let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-                self.dismiss(animated: true, completion: nil)
-            }
-            
-            alert.addAction(doneAction)
-            
-            OperationQueue.main.addOperation({ () -> Void in
-                self.present(alert, animated: true, completion: nil)
-            })*/
         }
     }
     
@@ -292,6 +271,9 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
         cell.nameLabel?.text = senderLabelText
         cell.nameLabel?.textColor = senderColor
         cell.messageLabel?.text = message.content
+        
+        //This is to see the messages from multiple peers in the console, currently there is a viewing issue when multiple peers are connected
+        print("Row \(indexPath.row) with message content '\(message.content)'")
         
         return cell
     }

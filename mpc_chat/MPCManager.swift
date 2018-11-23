@@ -84,7 +84,7 @@ class MPCManager: NSObject {
         startAdvertising()
         
         //Notify everyone MPC is up and running
-        NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
+        NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
     }
     
     //MARK: Public methods for managerDelegates

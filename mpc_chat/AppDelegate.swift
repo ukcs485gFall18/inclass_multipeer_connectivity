@@ -81,10 +81,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 
-    @objc func handleCoreDataInitializedReceived(_ notification: NSNotification) {
+    @objc func handleCoreDataInitializedReceived(_ notification: Notification) {
         //Set flag
         self.coreDataManager.setCoreDataAsReady()
-        NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationCoreDataIsReady), object: nil)
+        NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationCoreDataIsReady), object: nil)
     }
 
 }

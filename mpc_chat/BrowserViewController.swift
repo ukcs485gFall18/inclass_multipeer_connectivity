@@ -58,12 +58,12 @@ class BrowserViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
-    @objc func handleCoreDataInitializedReceived(_ notification: NSNotification) {
+    @objc func handleCoreDataInitializedReceived(_ notification: Notification) {
         //Reload cells to reflect coreData updates
         tblPeers.reloadData()
     }
     
-    @objc func handleBrowserUserTappedCell(_ notification: NSNotification) {
+    @objc func handleBrowserUserTappedCell(_ notification: Notification) {
         
         // Note: use notification.object if you want to send any data with a posted Notification
         let receivedDataDictionary = notification.object as! [String: Any]
@@ -240,6 +240,7 @@ extension BrowserViewController: MPCManagerDelegate{
         //If the user is connected to anyone, deny all invitations received
         if appDelagate.mpcManager.getPeersConnectedTo().count > 0{
             completion(fromPeerHash, false)
+        
         }
         
         guard let roomUUID = additionalInfo[kBrowserPeerRoomUUID] as? String else{
@@ -304,8 +305,11 @@ extension BrowserViewController: MPCManagerDelegate{
                 appDelagate.mpcManager.disconnect()
                 
             }else{
-                OperationQueue.main.addOperation{ () -> Void in
-                    self.performSegue(withIdentifier: kSegueChat, sender: self)
+                //Only segue if this view if the main view
+                if self.view.superview != nil {
+                    OperationQueue.main.addOperation{ () -> Void in
+                        self.performSegue(withIdentifier: kSegueChat, sender: self)
+                    }
                 }
             }
         })
@@ -381,5 +385,3 @@ extension BrowserViewController: UITableViewDelegate, UITableViewDataSource{
         return 60.0
     }
 }
-
-

@@ -52,7 +52,7 @@ class BrowserModel: NSObject{
     }
     
     //MARK: Private methods
-    @objc fileprivate func handleCoreDataIsReady(_ notification: NSNotification){
+    @objc fileprivate func handleCoreDataIsReady(_ notification: Notification){
         
         if !coreDataManager.isCoreDataReady{
             return

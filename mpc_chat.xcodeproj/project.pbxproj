@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		9119007E218237F100EB17A9 /* CoreDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9119007D218237F100EB17A9 /* CoreDataManager.swift */; };
 		911900862182493000EB17A9 /* BrowserTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 911900852182493000EB17A9 /* BrowserTableViewCell.swift */; };
+		9132D2F221A79DC80090CECF /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9132D2F121A79DC80090CECF /* CloudKit.framework */; };
+		9132D2F421A866900090CECF /* CloudKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9132D2F321A866900090CECF /* CloudKitManager.swift */; };
 		9135EAB9218E2C1000E1D20C /* ChatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9135EAB8218E2C1000E1D20C /* ChatModel.swift */; };
 		91525B951CBC5CC3008C858E /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91525B941CBC5CC3008C858E /* AppDelegate.swift */; };
 		91525B9C1CBC5CC3008C858E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 91525B9B1CBC5CC3008C858E /* Assets.xcassets */; };
@@ -54,6 +56,8 @@
 		91078C7C2190B61200D634B1 /* mpc_chat 5.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "mpc_chat 5.xcdatamodel"; sourceTree = "<group>"; };
 		9119007D218237F100EB17A9 /* CoreDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataManager.swift; sourceTree = "<group>"; };
 		911900852182493000EB17A9 /* BrowserTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserTableViewCell.swift; sourceTree = "<group>"; };
+		9132D2F121A79DC80090CECF /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
+		9132D2F321A866900090CECF /* CloudKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitManager.swift; sourceTree = "<group>"; };
 		9135EAB8218E2C1000E1D20C /* ChatModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModel.swift; sourceTree = "<group>"; };
 		91525B911CBC5CC3008C858E /* mpc_chat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mpc_chat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		91525B941CBC5CC3008C858E /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -94,6 +98,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9132D2F221A79DC80090CECF /* CloudKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,6 +124,7 @@
 			children = (
 				918A49A221791F8D00B3DE31 /* mpc_chat.xcdatamodeld */,
 				9119007D218237F100EB17A9 /* CoreDataManager.swift */,
+				9132D2F321A866900090CECF /* CloudKitManager.swift */,
 				91D32674218B7522003C8096 /* Message+CoreDataClass.swift */,
 				91D32675218B7522003C8096 /* Message+CoreDataProperties.swift */,
 				B5FCA00E2182611200263882 /* Peer+CoreDataClass.swift */,
@@ -129,6 +135,14 @@
 			path = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		9132D2EE21A79B080090CECF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				9132D2F121A79DC80090CECF /* CloudKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		91525B881CBC5CC2008C858E = {
 			isa = PBXGroup;
 			children = (
@@ -137,6 +151,7 @@
 				91525BB31CBC5CC3008C858E /* mpc_chatUITests */,
 				91525B921CBC5CC3008C858E /* Products */,
 				91714534218B77AE00D71EF1 /* Recovered References */,
+				9132D2EE21A79B080090CECF /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -268,10 +283,19 @@
 				TargetAttributes = {
 					91525B901CBC5CC3008C858E = {
 						CreatedOnToolsVersion = 7.3;
-						DevelopmentTeam = BH9BS3QV7C;
+						DevelopmentTeam = K26KDKYY38;
 						SystemCapabilities = {
+							com.apple.ClassKit = {
+								enabled = 0;
+							};
 							com.apple.HealthKit = {
 								enabled = 0;
+							};
+							com.apple.Push = {
+								enabled = 1;
+							};
+							com.apple.iCloud = {
+								enabled = 1;
 							};
 						};
 					};
@@ -346,6 +370,7 @@
 				91525BC71CBC6166008C858E /* ChatViewController.swift in Sources */,
 				91714537218B781200D71EF1 /* Peer+CoreDataProperties.swift in Sources */,
 				91D3266521855037003C8096 /* MPCChatUtility.swift in Sources */,
+				9132D2F421A866900090CECF /* CloudKitManager.swift in Sources */,
 				91D3266C218B667F003C8096 /* Room+CoreDataClass.swift in Sources */,
 				91D32677218B7522003C8096 /* Message+CoreDataProperties.swift in Sources */,
 				911900862182493000EB17A9 /* BrowserTableViewCell.swift in Sources */,
@@ -522,12 +547,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = mpc_chat/mpc_chat.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				DEVELOPMENT_TEAM = BH9BS3QV7C;
+				DEVELOPMENT_TEAM = K26KDKYY38;
 				INFOPLIST_FILE = mpc_chat/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "edu.uky.cs485g.Instructor.mpc-chat";
+				PRODUCT_BUNDLE_IDENTIFIER = "edu.uky.cs485g.Instructor.mpc-chat-cloud2";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				SWIFT_VERSION = 4.2;
@@ -538,12 +564,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = mpc_chat/mpc_chat.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				DEVELOPMENT_TEAM = BH9BS3QV7C;
+				DEVELOPMENT_TEAM = K26KDKYY38;
 				INFOPLIST_FILE = mpc_chat/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "edu.uky.cs485g.Instructor.mpc-chat";
+				PRODUCT_BUNDLE_IDENTIFIER = "edu.uky.cs485g.Instructor.mpc-chat-cloud2";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				SWIFT_VERSION = 4.2;

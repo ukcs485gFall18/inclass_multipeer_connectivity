@@ -51,6 +51,42 @@ class BrowserViewController: UIViewController {
         appDelagate.mpcManager.managerDelegate = self
         browserSegment.selectedSegmentIndex = 0 //Default segment to first index
         
+        CloudKitManager.isUserLoggedIntoICloud(completion: {
+            (error) -> Void in
+            
+            if error != nil{
+                print("Ask user to login into iCloud")
+                let alertController = UIAlertController(title: "iCloud Login", message: "Go to Settings?", preferredStyle: .alert)
+                
+                let settingsAction = UIAlertAction(title: "Settings", style: .default, handler: {
+                    (alert) -> Void in
+                    //guard let settingsUrl = URL(string: UIApplication.openSettingsURLString)
+                    //All settings URL's can be found here: https://github.com/phynet/iOS-URL-Schemes
+                    guard let settingsUrl = URL(string: "App-prefs:") else{
+                        return
+                    }
+                    
+                    if UIApplication.shared.canOpenURL(settingsUrl){
+                        
+                        if #available(iOS 10.0, *) {
+                            UIApplication.shared.open(settingsUrl, completionHandler: {
+                                (success) -> Void in
+                                
+                                print("Oppened settings")
+                                
+                            })
+                        } else {
+                            // Fallback on earlier versions
+                            UIApplication.shared.openURL(settingsUrl)
+                        }
+                    }
+                })
+                
+                alertController.addAction(settingsAction)
+                
+                self.present(alertController, animated: true, completion: nil)
+            }
+        })
     }
     
     override func didReceiveMemoryWarning() {

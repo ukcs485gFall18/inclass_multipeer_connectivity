@@ -226,7 +226,7 @@ extension ChatViewController: MPCManagerMessageDelegate {
                 }
                 
                 messagesToDisplay.append(message)
-                
+                print("Received messaged with content: \(message.content)")
                 self.updateTableview()
                 
             })

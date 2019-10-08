@@ -13,8 +13,6 @@
 		91525B951CBC5CC3008C858E /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91525B941CBC5CC3008C858E /* AppDelegate.swift */; };
 		91525B9C1CBC5CC3008C858E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 91525B9B1CBC5CC3008C858E /* Assets.xcassets */; };
 		91525B9F1CBC5CC3008C858E /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 91525B9D1CBC5CC3008C858E /* LaunchScreen.storyboard */; };
-		91525BAA1CBC5CC3008C858E /* mpc_chatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91525BA91CBC5CC3008C858E /* mpc_chatTests.swift */; };
-		91525BB51CBC5CC3008C858E /* mpc_chatUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91525BB41CBC5CC3008C858E /* mpc_chatUITests.swift */; };
 		91525BC61CBC6166008C858E /* ChatTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91525BC21CBC6166008C858E /* ChatTableViewCell.swift */; };
 		91525BC71CBC6166008C858E /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91525BC31CBC6166008C858E /* ChatViewController.swift */; };
 		91525BC81CBC6166008C858E /* BrowserViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91525BC41CBC6166008C858E /* BrowserViewController.swift */; };
@@ -33,23 +31,6 @@
 		B5FCA0102182611200263882 /* Peer+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5FCA00E2182611200263882 /* Peer+CoreDataClass.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		91525BA61CBC5CC3008C858E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 91525B891CBC5CC2008C858E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 91525B901CBC5CC3008C858E;
-			remoteInfo = mpc_chat;
-		};
-		91525BB11CBC5CC3008C858E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 91525B891CBC5CC2008C858E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 91525B901CBC5CC3008C858E;
-			remoteInfo = mpc_chat;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
 		91078C7C2190B61200D634B1 /* mpc_chat 5.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "mpc_chat 5.xcdatamodel"; sourceTree = "<group>"; };
 		9119007D218237F100EB17A9 /* CoreDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataManager.swift; sourceTree = "<group>"; };
@@ -60,12 +41,6 @@
 		91525B9B1CBC5CC3008C858E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		91525B9E1CBC5CC3008C858E /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		91525BA01CBC5CC3008C858E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		91525BA51CBC5CC3008C858E /* mpc_chatTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mpc_chatTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		91525BA91CBC5CC3008C858E /* mpc_chatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mpc_chatTests.swift; sourceTree = "<group>"; };
-		91525BAB1CBC5CC3008C858E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		91525BB01CBC5CC3008C858E /* mpc_chatUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mpc_chatUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		91525BB41CBC5CC3008C858E /* mpc_chatUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mpc_chatUITests.swift; sourceTree = "<group>"; };
-		91525BB61CBC5CC3008C858E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		91525BC21CBC6166008C858E /* ChatTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatTableViewCell.swift; sourceTree = "<group>"; };
 		91525BC31CBC6166008C858E /* ChatViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
 		91525BC41CBC6166008C858E /* BrowserViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowserViewController.swift; sourceTree = "<group>"; };
@@ -97,20 +72,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		91525BA21CBC5CC3008C858E /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		91525BAD1CBC5CC3008C858E /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -133,8 +94,6 @@
 			isa = PBXGroup;
 			children = (
 				91525B931CBC5CC3008C858E /* mpc_chat */,
-				91525BA81CBC5CC3008C858E /* mpc_chatTests */,
-				91525BB31CBC5CC3008C858E /* mpc_chatUITests */,
 				91525B921CBC5CC3008C858E /* Products */,
 				91714534218B77AE00D71EF1 /* Recovered References */,
 			);
@@ -144,8 +103,6 @@
 			isa = PBXGroup;
 			children = (
 				91525B911CBC5CC3008C858E /* mpc_chat.app */,
-				91525BA51CBC5CC3008C858E /* mpc_chatTests.xctest */,
-				91525BB01CBC5CC3008C858E /* mpc_chatUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -172,24 +129,6 @@
 				91525BA01CBC5CC3008C858E /* Info.plist */,
 			);
 			path = mpc_chat;
-			sourceTree = "<group>";
-		};
-		91525BA81CBC5CC3008C858E /* mpc_chatTests */ = {
-			isa = PBXGroup;
-			children = (
-				91525BA91CBC5CC3008C858E /* mpc_chatTests.swift */,
-				91525BAB1CBC5CC3008C858E /* Info.plist */,
-			);
-			path = mpc_chatTests;
-			sourceTree = "<group>";
-		};
-		91525BB31CBC5CC3008C858E /* mpc_chatUITests */ = {
-			isa = PBXGroup;
-			children = (
-				91525BB41CBC5CC3008C858E /* mpc_chatUITests.swift */,
-				91525BB61CBC5CC3008C858E /* Info.plist */,
-			);
-			path = mpc_chatUITests;
 			sourceTree = "<group>";
 		};
 		91714534218B77AE00D71EF1 /* Recovered References */ = {
@@ -220,42 +159,6 @@
 			productReference = 91525B911CBC5CC3008C858E /* mpc_chat.app */;
 			productType = "com.apple.product-type.application";
 		};
-		91525BA41CBC5CC3008C858E /* mpc_chatTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 91525BBC1CBC5CC3008C858E /* Build configuration list for PBXNativeTarget "mpc_chatTests" */;
-			buildPhases = (
-				91525BA11CBC5CC3008C858E /* Sources */,
-				91525BA21CBC5CC3008C858E /* Frameworks */,
-				91525BA31CBC5CC3008C858E /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				91525BA71CBC5CC3008C858E /* PBXTargetDependency */,
-			);
-			name = mpc_chatTests;
-			productName = mpc_chatTests;
-			productReference = 91525BA51CBC5CC3008C858E /* mpc_chatTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		91525BAF1CBC5CC3008C858E /* mpc_chatUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 91525BBF1CBC5CC3008C858E /* Build configuration list for PBXNativeTarget "mpc_chatUITests" */;
-			buildPhases = (
-				91525BAC1CBC5CC3008C858E /* Sources */,
-				91525BAD1CBC5CC3008C858E /* Frameworks */,
-				91525BAE1CBC5CC3008C858E /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				91525BB21CBC5CC3008C858E /* PBXTargetDependency */,
-			);
-			name = mpc_chatUITests;
-			productName = mpc_chatUITests;
-			productReference = 91525BB01CBC5CC3008C858E /* mpc_chatUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -263,31 +166,24 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0730;
-				LastUpgradeCheck = 1000;
+				LastUpgradeCheck = 1100;
 				ORGANIZATIONNAME = "University of Kentucky - CS 485G";
 				TargetAttributes = {
 					91525B901CBC5CC3008C858E = {
 						CreatedOnToolsVersion = 7.3;
 						DevelopmentTeam = BH9BS3QV7C;
+						LastSwiftMigration = 1100;
 						SystemCapabilities = {
 							com.apple.HealthKit = {
 								enabled = 0;
 							};
 						};
 					};
-					91525BA41CBC5CC3008C858E = {
-						CreatedOnToolsVersion = 7.3;
-						TestTargetID = 91525B901CBC5CC3008C858E;
-					};
-					91525BAF1CBC5CC3008C858E = {
-						CreatedOnToolsVersion = 7.3;
-						TestTargetID = 91525B901CBC5CC3008C858E;
-					};
 				};
 			};
 			buildConfigurationList = 91525B8C1CBC5CC2008C858E /* Build configuration list for PBXProject "mpc_chat" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
@@ -299,8 +195,6 @@
 			projectRoot = "";
 			targets = (
 				91525B901CBC5CC3008C858E /* mpc_chat */,
-				91525BA41CBC5CC3008C858E /* mpc_chatTests */,
-				91525BAF1CBC5CC3008C858E /* mpc_chatUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -314,20 +208,6 @@
 				91525B9F1CBC5CC3008C858E /* LaunchScreen.storyboard in Resources */,
 				918A499D2179020B00B3DE31 /* README.md in Resources */,
 				91525B9C1CBC5CC3008C858E /* Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		91525BA31CBC5CC3008C858E /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		91525BAE1CBC5CC3008C858E /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -359,36 +239,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		91525BA11CBC5CC3008C858E /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				91525BAA1CBC5CC3008C858E /* mpc_chatTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		91525BAC1CBC5CC3008C858E /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				91525BB51CBC5CC3008C858E /* mpc_chatUITests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		91525BA71CBC5CC3008C858E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 91525B901CBC5CC3008C858E /* mpc_chat */;
-			targetProxy = 91525BA61CBC5CC3008C858E /* PBXContainerItemProxy */;
-		};
-		91525BB21CBC5CC3008C858E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 91525B901CBC5CC3008C858E /* mpc_chat */;
-			targetProxy = 91525BB11CBC5CC3008C858E /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		91525B9D1CBC5CC3008C858E /* LaunchScreen.storyboard */ = {
@@ -414,6 +265,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -471,6 +323,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -530,7 +383,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "edu.uky.cs485g.Instructor.mpc-chat";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -546,57 +399,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "edu.uky.cs485g.Instructor.mpc-chat";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
-				SWIFT_VERSION = 4.2;
-			};
-			name = Release;
-		};
-		91525BBD1CBC5CC3008C858E /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				INFOPLIST_FILE = mpc_chatTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "edu.ucsd.ece158b.Instructor.mpc-chatTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/mpc_chat.app/mpc_chat";
-			};
-			name = Debug;
-		};
-		91525BBE1CBC5CC3008C858E /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				INFOPLIST_FILE = mpc_chatTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "edu.ucsd.ece158b.Instructor.mpc-chatTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/mpc_chat.app/mpc_chat";
-			};
-			name = Release;
-		};
-		91525BC01CBC5CC3008C858E /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				INFOPLIST_FILE = mpc_chatUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "edu.ucsd.ece158b.Instructor.mpc-chatUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
-				TEST_TARGET_NAME = mpc_chat;
-			};
-			name = Debug;
-		};
-		91525BC11CBC5CC3008C858E /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				INFOPLIST_FILE = mpc_chatUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "edu.ucsd.ece158b.Instructor.mpc-chatUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
-				TEST_TARGET_NAME = mpc_chat;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -617,24 +420,6 @@
 			buildConfigurations = (
 				91525BBA1CBC5CC3008C858E /* Debug */,
 				91525BBB1CBC5CC3008C858E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		91525BBC1CBC5CC3008C858E /* Build configuration list for PBXNativeTarget "mpc_chatTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				91525BBD1CBC5CC3008C858E /* Debug */,
-				91525BBE1CBC5CC3008C858E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		91525BBF1CBC5CC3008C858E /* Build configuration list for PBXNativeTarget "mpc_chatUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				91525BC01CBC5CC3008C858E /* Debug */,
-				91525BC11CBC5CC3008C858E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

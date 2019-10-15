@@ -16,6 +16,7 @@ class ChatViewController: UIViewController {
     var messagesToDisplay = [Message]()
     var model = ChatModel() //This initialization is replaced by the BrowserView segue preperation
     var isConnected = false
+    //var viewDissapeared = false
 
     @IBOutlet weak var roomNameTextField: UITextField!
     @IBOutlet weak var txtChat: UITextField!
@@ -26,8 +27,12 @@ class ChatViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handlePeerAddedToRoom(_:)), name: Notification.Name(rawValue: kNotificationChatRefreshRoom), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handlePeerWasLost(_:)), name: Notification.Name(rawValue: kNotificationChatPeerWasLost), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleNewMessagePosted(_:)), name: Notification.Name(rawValue: kNotificationChatNewMessagePosted), object: nil)
+        
         // Do any additional setup after loading the view.
-        appDelegate.mpcManager.messageDelegate = self
+        //appDelegate.mpcManager.messageDelegate = model
         
         tblChat.delegate = self
         tblChat.dataSource = self
@@ -62,6 +67,13 @@ class ChatViewController: UIViewController {
             txtChat.isHidden = true
         }
     }
+    
+    /*
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        
+        viewDissapeared = true
+    }*/
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -83,13 +95,13 @@ class ChatViewController: UIViewController {
     @IBAction func endChat(_ sender: AnyObject) {
     
         let messageDictionary: [String: String] = [kCommunicationsMessageContentTerm: kCommunicationsEndConnectionTerm]
-        let connectedPeers = appDelegate.mpcManager.getPeersConnectedTo()
+        let connectedPeers = model.curentBrowserModel.getPeersConnectedTo()
         
-        if appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
+        if model.curentBrowserModel.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
             
             //Give some time for connectedPeer to receive disconnect info
             DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
-                self.appDelegate.mpcManager.disconnect()
+                self.model.curentBrowserModel.disconnect()
             })
             
             self.dismiss(animated: true, completion: { () -> Void in
@@ -114,13 +126,89 @@ class ChatViewController: UIViewController {
         })
     }
     
+    //MARK: Notification receivers
+    @objc func handlePeerAddedToRoom(_ notification: Notification) {
+        
+        guard let peerAddedHash = notification.userInfo?[kNotificationChatPeerHashKey] as? Int else{
+            print("Error in ChatViewController.handlePeerAddedToRoom(). The key \(kNotificationChatPeerHashKey) was not found in the notification")
+            return
+        }
+        
+        guard let peerAddedName = model.curentBrowserModel.getPeerDisplayName(peerAddedHash) else{
+            return
+        }
+        
+        let alert = UIAlertController(title: "", message: "\(peerAddedName) has been added to the chat", preferredStyle: UIAlertController.Style.alert)
+        
+        let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
+            print("User tapped Okay")
+        }
+        
+        alert.addAction(doneAction)
+        
+        OperationQueue.main.addOperation({ () -> Void in
+           
+            //Only segue if this view if the main view
+            if self.view.superview != nil {
+            //if self.viewDissapeared == false{
+                self.present(alert, animated: true, completion: nil)
+            }
+        })
+        
+    }
+    
+    @objc func handleNewMessagePosted(_ notification: Notification) {
+        
+        guard let newMessage = notification.userInfo?[kNotificationChatPeerMessageKey] as? Message else{
+            print("Error in ChatViewController.handleNewMessagePosted(). The key \(kNotificationChatPeerMessageKey) was not found in the notification")
+            return
+        }
+        
+        messagesToDisplay.append(newMessage)
+        
+        self.updateTableview()
+        
+    }
+    
+    @objc func handlePeerWasLost(_ notification: Notification) {
+    
+        guard let peerName = notification.userInfo?[kNotificationChatPeerNameKey] as? String else{
+            print("Error in ChatViewController.handlePeerWasLost(). The key \(kNotificationChatPeerNameKey) was not found in the notification")
+            return
+        }
+        
+        
+        let alert = UIAlertController(title: "", message: "\(peerName) left the chat", preferredStyle: UIAlertController.Style.alert)
+        
+        let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
+            
+            //If you are the last one in the Chat, leave this room for now
+            if self.model.curentBrowserModel.getPeersConnectedTo().count < 2{
+                OperationQueue.main.addOperation({ () -> Void in
+                    self.dismiss(animated: true, completion: nil)
+                })
+            }
+        }
+        
+        alert.addAction(doneAction)
+        
+        OperationQueue.main.addOperation({ () -> Void in
+           
+            //Only segue if this view if the main view
+            if self.view.superview != nil {
+            //if self.viewDissapeared == false{
+                self.present(alert, animated: true, completion: nil)
+            }
+        })
+    }
+    
 }
 
 extension ChatViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         
-        model.storeNewMessage(content: textField.text!, fromPeer: appDelegate.peerUUID, completion: {
+        model.storeNewMessage(content: textField.text!, fromPeer: model.curentBrowserModel.peerUUID, completion: {
             (messageStored) -> Void in
             
             guard let message = messageStored else{
@@ -140,9 +228,9 @@ extension ChatViewController: UITextFieldDelegate {
             
             OperationQueue.main.addOperation{ () -> Void in
                 //MultipeerConnectivity is throwing a copy on main thread warning, which is why we are going to the main thread
-                let connectedPeers = self.appDelegate.mpcManager.getPeersConnectedTo()
+                let connectedPeers = self.model.curentBrowserModel.getPeersConnectedTo()
                 
-                if self.appDelegate.mpcManager.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
+                if self.model.curentBrowserModel.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
                     print("Sent message \(message.content) to room \(roomName)")
                 }else{
                     print("Couldn't send message \(message.content) to room \(roomName)")
@@ -158,86 +246,6 @@ extension ChatViewController: UITextFieldDelegate {
     }
 }
 
-extension ChatViewController: MPCManagerMessageDelegate {
-    
-    func lostPeer(_ peerHash: Int, peerName: String) {
-        
-        //Check to see if this is a peer we were connected to
-        model.lostPeer(peerHash, completion: {
-            (success) -> Void in
-            
-            if success{
-                let alert = UIAlertController(title: "", message: "\(peerName) left the chat", preferredStyle: UIAlertController.Style.alert)
-                
-                let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-                    
-                    //If you are the last one in the Chat, leave this room for now
-                    if self.appDelegate.mpcManager.getPeersConnectedTo().count < 2{
-                        OperationQueue.main.addOperation({ () -> Void in
-                            self.dismiss(animated: true, completion: nil)
-                        })
-                    }
-                }
-                
-                alert.addAction(doneAction)
-                
-                //HW3: Need to update the lastTimeConnected when an item is already saved to CoreData. This is when you disconnected from the user. Hint: use peerHash to find peer.
-                
-                OperationQueue.main.addOperation({ () -> Void in
-                    self.present(alert, animated: true, completion: nil)
-                })
-            }
-            
-        })
-        
-    }
-    
-    func messageReceived(_ fromPeerHash:Int, data: Data) {
-        
-        guard let fromPeer = appDelegate.mpcManager.getPeerDisplayName(fromPeerHash) else{
-            return
-        }
-        
-        //Convert the data (Data) into a Dictionary object
-        let dataDictionary = NSKeyedUnarchiver.unarchiveObject(with: data) as! [String:String]
-        
-        //Check if there's an entry with the kCommunicationsMessageContentTerm key
-        guard let message = dataDictionary[kCommunicationsMessageContentTerm] else{
-            return
-        }
-        
-        if message != kCommunicationsEndConnectionTerm  {
-            
-            //HW3: Hint, this is checking for kCommunicationsMessageUUIDTerm, what if we checked for kBrowserPeerRoomName to detect a room name?
-            guard let uuid = dataDictionary[kCommunicationsMessageUUIDTerm] else{
-                print("Error: received messaged is lacking UUID")
-                return
-            }
-            
-            guard let fromPeerUUID = model.getPeerUUIDFromHash(fromPeerHash) else{
-                return
-            }
-            
-            model.storeNewMessage(uuid, content: message, fromPeer: fromPeerUUID, completion: {
-                (messageReceived) -> Void in
-                
-                guard let message = messageReceived else{
-                    return
-                }
-                
-                messagesToDisplay.append(message)
-                
-                self.updateTableview()
-                
-            })
-            
-        }else{
-            //fromPeer want's to disconnect
-            print("\(fromPeer) is about to End this chat, prepare for disconnecton.")
-        }
-    }
-    
-}
 
 // MARK: UITableView related method implementation
 extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
@@ -259,7 +267,7 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
         var senderLabelText: String
         var senderColor: UIColor
         
-        if message.owner.uuid == appDelegate.peerUUID{
+        if message.owner.uuid == model.curentBrowserModel.peerUUID{
             senderLabelText = "I said"
             senderColor = UIColor.purple
         }else{

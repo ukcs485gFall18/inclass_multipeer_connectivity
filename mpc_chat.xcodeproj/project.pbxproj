@@ -88,8 +88,6 @@
 			isa = PBXGroup;
 			children = (
 				91525BCA1CBC6214008C858E /* MPCManager.swift */,
-				91525BC51CBC6166008C858E /* MPCChatConstants.swift */,
-				91D3266421855037003C8096 /* MPCChatUtility.swift */,
 			);
 			path = Connectivity;
 			sourceTree = "<group>";
@@ -137,6 +135,8 @@
 				9135EAB8218E2C1000E1D20C /* ChatModel.swift */,
 				91525BC31CBC6166008C858E /* ChatViewController.swift */,
 				91525BC21CBC6166008C858E /* ChatTableViewCell.swift */,
+				91525BC51CBC6166008C858E /* MPCChatConstants.swift */,
+				91D3266421855037003C8096 /* MPCChatUtility.swift */,
 				914D54372355F5F5007C00C2 /* Connectivity */,
 				91525B9B1CBC5CC3008C858E /* Assets.xcassets */,
 				91525BCC1CBC6900008C858E /* Main.storyboard */,

@@ -12,30 +12,97 @@
 
 import MultipeerConnectivity
 
+/**
 
+    All classes that want to know when peers are discovered, lost, connected or when an invitation is received have to conform to this protocol
+ 
+*/
 protocol MPCManagerDelegate {
     
+    /**
+
+        - parameters:
+            - peerHash: The hash value for the peer that was found
+            - withInfo: Additional information provided from peer
+     
+    */
     func foundPeer(_ peerHash: Int, withInfo: [String: String]?)
     
+    /**
+
+        - parameters:
+            - peerHash: The hash value for the peer that was lost and not seen anymore
+     
+    */
     func lostPeer(_ peerHash: Int)
     
-    func invitationWasReceived(_ fromPeerHash: Int, additionalInfo: [String: Any], completion: @escaping (_ fromPeer: Int, _ accept: Bool) ->Void)
-    
+    /**
+
+     - parameters:
+        - peerHash: The hash value for the peer that you are connected with
+        - peerName: The name of the peer you are conneced to
+     
+    */
     func connectedWithPeer(_ peerHash: Int, peerName: String)
     
 }
 
+protocol MPCManagerInvitationDelegate {
+    /**
+
+        - parameters:
+            - fromPeerHash: The hash value for the peer that was found
+            - additionalInfo: Additional information provided from peer
+            - completion: fromPeer is the hash value of the peer you want to respond to. accept is a bool value stating if you want to connect to peer or not
+     
+    */
+    func invitationWasReceived(_ fromPeerHash: Int, additionalInfo: [String: Any], completion: @escaping (_ fromPeer: Int, _ accept: Bool) ->Void)
+}
+
+/**
+
+    All classes that want to know receive data and know when a peers is lost have to conform to this protocol
+ 
+*/
 protocol MPCManagerMessageDelegate {
     
+    /**
+
+     - parameters:
+        - fromPeerHash: The hash value for the peer that the data is received from
+        - data: the data received from the peer
+     
+    */
     func messageReceived(_ fromPeerHash:Int, data: Data)
     
+    /**
+    
+     - parameters:
+        - peerHash: The hash value for the peer that was lost
+        - peerName: The name of the peer that was lost
+            
+     
+    */
     func lostPeer(_ peerHash: Int, peerName: String)
+    
+    /**
+     
+        If already connected with a peer, may need to know when an additional peer is added to the connection
+
+     - parameters:
+        - peerHash: The hash value for the peer that you are connected with
+        - peerName: The name of the peer you are conneced to
+     
+    */
+    //func connectedWithNewPeer(_ peerHash: Int, peerName: String)
 }
 
 class MPCManager: NSObject {
     
+    static var sharedMPCManager = CoreDataManager(databaseName: kCoreDataDBName, completionClosure: {})
     var managerDelegate:MPCManagerDelegate?
     var messageDelegate:MPCManagerMessageDelegate?
+    var invitationDelegate:MPCManagerInvitationDelegate?
     fileprivate var session: MCSession!
     fileprivate var myPeer: MCPeerID!
     fileprivate var browser: MCNearbyServiceBrowser!
@@ -52,6 +119,14 @@ class MPCManager: NSObject {
         }
     }
         
+    /**
+        Main initializer for MPC Manager
+        
+        - parameters:
+           - serviceType : The service type to browse for. This should be unique to your particular service
+           - advertisingName: The name or ID to advertise. This should be unique to your user or device, depending on how your application is setup
+           - discoverInfo: The info dictionary that contains additional information to help other user make a decision
+    */
     convenience init(_ serviceType: String, advertisingName: String, discoveryInfo: [String:String]) {
         
         self.init()
@@ -82,7 +157,9 @@ class MPCManager: NSObject {
         NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
     }
     
+    
     //MARK: Public methods for managerDelegates
+    
     func stopAdvertising(){
         advertiser.stopAdvertisingPeer()
         isAdvertising = false
@@ -93,6 +170,13 @@ class MPCManager: NSObject {
         isAdvertising = true
     }
     
+    /**
+        Invites a particular peer to connect with you
+        
+        - parameters:
+           - peerHash: The hash value for the peer you want to invite to a connection
+           - additionalInfo: Any additional information you want the peer to know
+    */
     func invitePeer(_ peerHash: Int, additionalInfo: [String:Any]?){
         
         guard let peerToInvite = foundPeers[peerHash] else{
@@ -110,6 +194,15 @@ class MPCManager: NSObject {
         browser.invitePeer(peerToInvite, to: session, withContext: infoAsData, timeout: 30)
     }
     
+    /**
+        Get the particular name of a peer if you need it
+        
+        - parameters:
+           - peerHash: The hash value for the peer you want the name of
+     
+        - returns: The name of the peer as a String
+     
+    */
     func getPeerDisplayName(_ hash: Int)->String? {
         
         guard let peerID = foundPeers[hash] else{
@@ -120,6 +213,13 @@ class MPCManager: NSObject {
         
         return peerID.displayName
     }
+    
+    /**
+        Get all of the peers you are currently connected to
+             
+        - returns: Returns an array of peers you are connected to
+     
+    */
     
     func getPeersConnectedTo()->[Int]{
         
@@ -136,7 +236,17 @@ class MPCManager: NSObject {
         session.disconnect()
     }
     
-    func sendData(dictionaryWithData dictionary: Dictionary<String,String>, toPeers peerHashs: [Int]) -> Bool {
+    /**
+        Sends the data to specific peers who you are connected to
+        
+        - parameters:
+            - dictionaryWithData: Data to send to peers
+            - toPeers: An array of peer hashes containing peers to send the data to
+     
+        - returns: If the data was properly sent or not
+     
+    */
+    func sendData(dictionaryWithData dictionary: [String:String], toPeers peerHashs: [Int]) -> Bool {
         
         //Prepare to send to all interested peers who are still connected
         var peersConnected = [MCPeerID]()
@@ -229,6 +339,7 @@ extension MPCManager: MCSessionDelegate {
         case .connected:
             print("Connected to \(peerID.displayName) with hash \(peerID.hash) in session \(session)")
             managerDelegate?.connectedWithPeer(peerID.hash, peerName: peerID.displayName)
+            //messageDelegate?.connectedWithNewPeer(peerID.hash, peerName: peerID.displayName)
             
         case .connecting:
             print("Connecting to \(peerID.displayName) with hash \(peerID.hash) in session \(session)")
@@ -310,7 +421,7 @@ extension MPCManager: MCNearbyServiceAdvertiserDelegate {
             return
         }
         
-        managerDelegate?.invitationWasReceived(peerID.hash, additionalInfo: additionalInformation, completion: {
+        invitationDelegate?.invitationWasReceived(peerID.hash, additionalInfo: additionalInformation, completion: {
             (fromPeer, accept) -> Void in
             
             if self.session.connectedPeers.count < kMCSessionMaximumNumberOfPeers{

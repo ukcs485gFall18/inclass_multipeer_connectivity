@@ -34,31 +34,48 @@ class BrowserViewController: UIViewController {
         }
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleCoreDataInitializedReceived(_:)), name: Notification.Name(rawValue: kNotificationCoreDataIsReady), object: nil)
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleBrowserUserTappedCell(_:)), name: Notification.Name(rawValue: kNotificationBrowserUserTappedCell), object: nil)
-
-    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view
+
+        NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleScreenNeedsToBeRefreshed(_:)), name: Notification.Name(rawValue: kNotificationCoreDataIsReady), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleScreenNeedsToBeRefreshed(_:)), name: Notification.Name(rawValue: kNotificationBrowserScreenNeedsToBeRefreshed), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleSegueToChatRoom(_:)), name: Notification.Name(rawValue: kNotificationBrowserConnectedToFirstPeer), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleBrowserUserTappedCell(_:)), name: Notification.Name(rawValue: kNotificationBrowserUserTappedCell), object: nil)
+        
+        model.setMPCInvitationManagerDelegate(self)
         
         tblPeers.delegate = self
         tblPeers.dataSource = self
         
-        appDelagate.mpcManager.managerDelegate = self
         browserSegment.selectedSegmentIndex = 0 //Default segment to first index
         
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        tblPeers.reloadData()
+    }
+    
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
     
-    @objc func handleCoreDataInitializedReceived(_ notification: Notification) {
+    @objc func handleSegueToChatRoom(_ notification: Notification) {
+        
+        OperationQueue.main.addOperation{ () -> Void in
+            //Only segue if this view if the main view
+            if self.view.superview != nil {
+                self.performSegue(withIdentifier: kSegueChat, sender: self)
+            }
+        }
+    }
+    
+    @objc func handleScreenNeedsToBeRefreshed(_ notification: Notification) {
         //Reload cells to reflect coreData updates
         tblPeers.reloadData()
     }
@@ -77,11 +94,13 @@ class BrowserViewController: UIViewController {
             return
         }
         
-        guard let peerDisplayName = appDelagate.mpcManager.getPeerDisplayName(peerHash) else{
+        guard let peerDisplayName = model.getPeerDisplayName(peerHash) else{
             return
         }
         
-        model.findOldChatRooms(self.appDelagate.peerUUID, peerToJoinUUID: peerUUID, completion: {
+        
+        
+        model.findOldChatRooms(peerToJoinUUID: peerUUID, completion: {
             (oldRoomsFound)-> Void in
             
             var oldRoomActions = [UIAlertAction]()
@@ -106,7 +125,7 @@ class BrowserViewController: UIViewController {
                         
                         OperationQueue.main.addOperation{ () -> Void in
                             //This method is used to send peer info they should used to connect
-                            self.appDelagate.mpcManager.invitePeer(peerHash, additionalInfo: info)
+                            self.model.invitePeer(peerHash, info: info)
                         }
                     }
                     
@@ -126,7 +145,7 @@ class BrowserViewController: UIViewController {
             let actionNewRoomTitle = "Create New \(roomName)"
             let createNewRoomAction: UIAlertAction = UIAlertAction(title: actionNewRoomTitle, style: UIAlertAction.Style.default) { (alertAction) -> Void in
                 
-                self.model.createNewChatRoom(self.appDelagate.peerUUID, peerToJoinUUID: peerUUID, roomName: roomName, completion: {
+                self.model.createNewChatRoom(peerUUID, roomName: roomName, completion: {
                     (createdRoom) -> Void in
                     
                     guard let room = createdRoom else{
@@ -143,7 +162,7 @@ class BrowserViewController: UIViewController {
                     
                     OperationQueue.main.addOperation{ () -> Void in
                         //This method is used to send peer info they should used to connect
-                        self.appDelagate.mpcManager.invitePeer(peerHash, additionalInfo: info)
+                        self.model.invitePeer(peerHash, info: info)
                     }
                     
                 })
@@ -174,7 +193,7 @@ class BrowserViewController: UIViewController {
         let actionSheet = UIAlertController(title: "", message: "Change Visibility", preferredStyle: UIAlertController.Style.actionSheet)
         
         var actionTitle: String
-        let isAdvertising = appDelagate.mpcManager.getIsAdvertising
+        let isAdvertising = model.getIsAdvertising()
         
         if isAdvertising == true {
             actionTitle = "Make me invisible to others"
@@ -185,9 +204,9 @@ class BrowserViewController: UIViewController {
         
         let visibilityAction: UIAlertAction = UIAlertAction(title: actionTitle, style: UIAlertAction.Style.default) { (alertAction) -> Void in
             if isAdvertising == true {
-                self.appDelagate.mpcManager.stopAdvertising()
+                self.model.stopAdvertising()
             }else {
-                self.appDelagate.mpcManager.startAdvertising()
+                self.model.startAdvertising()
             }
         }
         
@@ -207,11 +226,12 @@ class BrowserViewController: UIViewController {
             //Prepare the upcoming view with all of the necessary info
             let viewController = segue.destination as! ChatViewController
             
-            guard let room = model.roomToJoin else{
+            guard let _ = model.roomToJoin else{
                 fatalError("Never set the room for segue, should never happen")
             }
             
-            viewController.model = ChatModel(peer: model.getPeer, peerUUIDHashDictionary: model.getPeerUUIDHashDictionary, peerHashUUIDDictionary: model.getPeerHashUUIDDictionary, room: room)
+            viewController.model = ChatModel(browserModel: model)
+            //viewController.model = ChatModel(peer: model.getPeer, peerUUIDHashDictionary: model.getPeerUUIDHashDictionary, peerHashUUIDDictionary: model.getPeerHashUUIDDictionary, room: room)
             viewController.isConnected = true
         }
     }
@@ -219,28 +239,13 @@ class BrowserViewController: UIViewController {
 }
 
 // MARK: MPCManager delegate methods implementation
-extension BrowserViewController: MPCManagerDelegate{
-    
-    //HW3: Fix BrowserTable refreshing/reloading when MPC Manager refreshes and "Peers" is the segment selected
-    func foundPeer(_ peerHash: Int, withInfo: [String:String]?) {
-        
-        model.foundPeer(peerHash, info: withInfo)
-        
-        tblPeers.reloadData()
-    }
-    
-    func lostPeer(_ peerHash: Int) {
-        
-        model.lostPeer(peerHash)
-        tblPeers.reloadData()
-    }
+extension BrowserViewController: MPCManagerInvitationDelegate{
     
     func invitationWasReceived(_ fromPeerHash: Int, additionalInfo: [String: Any], completion: @escaping (_ fromPeer: Int, _ accept: Bool) ->Void) {
         
         //If the user is connected to anyone, deny all invitations received
-        if appDelagate.mpcManager.getPeersConnectedTo().count > 0{
+        if model.getPeersConnectedTo().count > 0{
             completion(fromPeerHash, false)
-        
         }
         
         guard let roomUUID = additionalInfo[kBrowserPeerRoomUUID] as? String else{
@@ -251,7 +256,7 @@ extension BrowserViewController: MPCManagerDelegate{
             return
         }
         
-        guard let fromPeerName = appDelagate.mpcManager.getPeerDisplayName(fromPeerHash) else{
+        guard let fromPeerName = model.getPeerDisplayName(fromPeerHash) else{
             return
         }
         
@@ -291,34 +296,12 @@ extension BrowserViewController: MPCManagerDelegate{
         
     }
     
-    func connectedWithPeer(_ peerHash: Int, peerName: String) {
-        
-        guard let peerUUID = model.getPeerUUIDFromHash(peerHash) else{
-            return
-        }
-        
-        model.storeNewPeer(peerUUID: peerUUID, peerName: peerName, isConnectedToPeer: true, completion: {
-            (storedPeer) -> Void in
-            
-            if storedPeer == nil{
-                print("Couldn't store peer info, disconnecting from \(peerName) with uuid \(peerUUID)")
-                appDelagate.mpcManager.disconnect()
-                
-            }else{
-                
-                OperationQueue.main.addOperation{ () -> Void in
-                    //Only segue if this view if the main view
-                    if self.view.superview != nil {
-                        self.performSegue(withIdentifier: kSegueChat, sender: self)
-                    }
-                }
-            }
-        })
-    }
 }
 
 // MARK: UITableView related method implementation
 extension BrowserViewController: UITableViewDelegate, UITableViewDataSource{
+    
+    //HW3: Fix BrowserTable refreshing/reloading when MPC Manager refreshes and "Peers" is the segment selected
     
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {
         return 1
@@ -349,7 +332,7 @@ extension BrowserViewController: UITableViewDelegate, UITableViewDataSource{
             return cell
         }
         
-        guard let displayName = appDelagate.mpcManager.getPeerDisplayName(peerHash) else{
+        guard let displayName = model.getPeerDisplayName(peerHash) else{
             return cell
         }
         

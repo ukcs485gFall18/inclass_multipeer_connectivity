@@ -7,17 +7,20 @@
 //
 
 import Foundation
-import UIKit
 import CoreData
 
 class BrowserModel: NSObject{
-    
+
+    fileprivate var mpcManager: MPCManager!
+    var peerUUID:String!
+    var peerDisplayName:String!
     fileprivate var peerUUIDHash = [String:Int]()
     fileprivate var peerHashUUID = [Int:String]()
     fileprivate let coreDataManager = CoreDataManager.sharedCoreDataManager
-    fileprivate let appDelagate = UIApplication.shared.delegate as! AppDelegate
+    //fileprivate let appDelagate = UIApplication.shared.delegate as! AppDelegate
     fileprivate var thisPeer:Peer!
     var roomToJoin:Room?
+
     
     var getPeerUUIDHashDictionary:[String:Int]{
         get{
@@ -49,7 +52,24 @@ class BrowserModel: NSObject{
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationCoreDataIsReady), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
         
+        peerDisplayName = MPCChatUtility.getDeviceName() //This is the display name for the device.
+        
+        guard let discovery = MPCChatUtility.buildAdvertisingDictionary() else{
+            fatalError("Error in BroswerModel:init() couldn't buildAdvertisingDictionary")
+        }
+        
+        guard let uuid = discovery[kAdvertisingUUID] else {
+            fatalError("Error in BroswerModel:init() couldn't find \(kAdvertisingUUID) in discovery info, only found \(discovery)")
+        }
+        
+        peerUUID = uuid
+        
+        self.mpcManager = MPCManager(kAppName, advertisingName: peerDisplayName, discoveryInfo: discovery)
+        
+        mpcManager.managerDelegate = self
+        
     }
+    
     
     //MARK: Private methods
     @objc fileprivate func handleCoreDataIsReady(_ notification: Notification){
@@ -63,7 +83,7 @@ class BrowserModel: NSObject{
             return
         }
         
-        let (myPeerUUID, myPeerName) = (appDelagate.peerUUID, appDelagate.peerDisplayName)
+        let (myPeerUUID, myPeerName) = (peerUUID!, peerDisplayName!)
         
         storeNewPeer(peerUUID: myPeerUUID, peerName: myPeerName, isConnectedToPeer: false, completion: {
             (storedPeer) -> Void in
@@ -78,22 +98,6 @@ class BrowserModel: NSObject{
             
         })
         
-    }
-    
-    
-    fileprivate func findRooms(_ roomUUIDs: [String], completion : (_ roomsFound:[Room]?) -> ()){
-        
-        var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeUUID) IN %@", roomUUIDs))
-        
-        let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
-        
-        coreDataManager.queryCoreDataRooms(compoundQuery, completion: {
-            (rooms) -> Void in
-            
-            completion(rooms)
-            
-        })
     }
     
     fileprivate func findRooms(_ owner: Peer, withPeer peer :Peer, completion : (_ roomsFound:[Room]?) -> ()){
@@ -128,27 +132,16 @@ class BrowserModel: NSObject{
     
     
     //MARK: Public methods
-    
-    func foundPeer(_ peerHash:Int, info: [String:String]?) -> () {
-        //Add peers to both dictionaries
-        
-        guard let uuid = info?[kAdvertisingUUID] else{
-            return
-        }
-        
-        peerUUIDHash[uuid] = peerHash
-        peerHashUUID[peerHash] = uuid
-        
-        BrowserModel.updateLastTimeSeenPeer([uuid])
+    func setMPCMessageManagerDelegate(_ toBecomeDelegate: MPCManagerMessageDelegate){
+        mpcManager.messageDelegate = toBecomeDelegate
     }
     
-    func lostPeer(_ peerHash:Int) -> (){
-        //Remove from both dictionaries
-        guard let uuid = peerHashUUID.removeValue(forKey: peerHash) else{
-            return
-        }
-        
-        _ = peerUUIDHash.removeValue(forKey: uuid)
+    func setMPCInvitationManagerDelegate(_ toBecomeDelegate: MPCManagerInvitationDelegate){
+        mpcManager.invitationDelegate = toBecomeDelegate
+    }
+    
+    func getPeerDisplayName(_ peerHash: Int)-> String?{
+        return mpcManager.getPeerDisplayName(peerHash)
     }
     
     func getPeerUUIDFromHash(_ peerHash: Int) -> String?{
@@ -159,10 +152,18 @@ class BrowserModel: NSObject{
         return peerUUIDHash[peerUUID]
     }
     
+    func disconnect(){
+        mpcManager.disconnect()
+    }
+    
+    func sendData(dictionaryWithData: [String:String], toPeers: [Int]) -> Bool {
+        return mpcManager.sendData(dictionaryWithData: dictionaryWithData, toPeers: toPeers)
+    }
+    
     func storeNewPeer(peerUUID: String, peerName: String, isConnectedToPeer: Bool, completion : (_ peer:Peer?) -> ()){
         
         var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributepeerUUID) IN %@", [peerUUID]))
+        predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributePeerUUID) IN %@", [peerUUID]))
         
         let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
         
@@ -216,8 +217,27 @@ class BrowserModel: NSObject{
     }
     
     
+    func invitePeer(_ peerHash: Int, info: [String:Any]?){
+        mpcManager.invitePeer(peerHash, additionalInfo: info)
+    }
     
-    func findOldChatRooms(_ ownerUUID: String, peerToJoinUUID: String, completion : (_ room:[Room]?) -> ()){
+    func getIsAdvertising()->Bool{
+        return mpcManager.getIsAdvertising
+    }
+    
+    func stopAdvertising(){
+        mpcManager.stopAdvertising()
+    }
+    
+    func startAdvertising(){
+        mpcManager.startAdvertising()
+    }
+    
+    func getPeersConnectedTo()->[Int]{
+        return mpcManager.getPeersConnectedTo()
+    }
+    
+    func findOldChatRooms(peerToJoinUUID: String, completion : (_ room:[Room]?) -> ()){
         
         BrowserModel.findPeers([peerToJoinUUID], completion: {
             (peersFound) -> Void in
@@ -243,7 +263,7 @@ class BrowserModel: NSObject{
         })
     }
     
-    func createNewChatRoom(_ ownerUUID: String, peerToJoinUUID: String, roomName: String, completion : (_ room:Room?) -> ()){
+    func createNewChatRoom(_ peerToJoinUUID: String, roomName: String, completion : (_ room:Room?) -> ()){
         
         let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: coreDataManager.managedObjectContext) as! Room
         
@@ -259,7 +279,7 @@ class BrowserModel: NSObject{
                     return
                 }
                 
-                guard let peerName = appDelagate.mpcManager.getPeerDisplayName(peerHash) else{
+                guard let peerName = mpcManager.getPeerDisplayName(peerHash) else{
                     discard()
                     completion(nil)
                     return
@@ -306,7 +326,7 @@ class BrowserModel: NSObject{
     
     func joinChatRoom(_ roomUUID: String, roomName: String, ownerUUID: String, ownerName: String, completion : (_ rooms:Room?) -> ()){
         
-        findRooms([roomUUID], completion: {
+        BrowserModel.findRooms([roomUUID], completion: {
             
             (roomsFound) -> Void in
             
@@ -325,6 +345,12 @@ class BrowserModel: NSObject{
                 BrowserModel.findPeers([ownerUUID], completion: {
                     (peersFound) -> Void in
                     
+                    
+                    //Build dictionary of user information to send
+                    let notificationInfo = [
+                        kNotificationChatPeerUUIDKey: ownerUUID
+                    ]
+                        
                     guard let peer = peersFound?.first else{
                         //If this owner has never been saved before, need to save
                         let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: coreDataManager.managedObjectContext) as! Peer
@@ -335,6 +361,10 @@ class BrowserModel: NSObject{
                         newRoom.addToPeers(self.thisPeer)
                         
                         if save(){
+                            
+                            //Send notification that room has changed. This is needed for cases when the BrowserModel is used to add additional users to a room
+                            NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: self, userInfo: notificationInfo)
+                            
                             completion(newRoom)
                         }else{
                             print("Could not save newEntity for Room - \(roomName), with owner - \(ownerUUID)")
@@ -349,8 +379,11 @@ class BrowserModel: NSObject{
                     newRoom.createNew(roomUUID, roomName: roomName, owner: peer)
                     newRoom.addToPeers(peer)
                     
-                    
                     if save(){
+                        
+                        //Send notification that room has changed. This is needed for cases when the BrowserModel is used to add additional users to a room
+                        NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: self, userInfo: notificationInfo)
+                        
                         completion(newRoom)
                     }else{
                         discard()
@@ -402,7 +435,7 @@ class BrowserModel: NSObject{
         let coreDataManager = CoreDataManager.sharedCoreDataManager
         
         var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributepeerUUID) IN %@", peerUUIDs))
+        predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributePeerUUID) IN %@", peerUUIDs))
         
         let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
         
@@ -430,4 +463,76 @@ class BrowserModel: NSObject{
         })
     }
     
+    class func findRooms(_ roomUUIDs: [String], completion : (_ roomsFound:[Room]?) -> ()){
+        
+        let coreDataManager = CoreDataManager.sharedCoreDataManager
+        
+        var predicateArray = [NSPredicate]()
+        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeUUID) IN %@", roomUUIDs))
+        
+        let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
+        
+        coreDataManager.queryCoreDataRooms(compoundQuery, completion: {
+            (rooms) -> Void in
+            
+            completion(rooms)
+            
+        })
+    }
+    
+}
+
+// MARK: MPCManager delegate methods implementation
+extension BrowserModel: MPCManagerDelegate{
+    
+    //HW3: Fix BrowserTable refreshing/reloading when MPC Manager refreshes and "Peers" is the segment selected
+    func foundPeer(_ peerHash: Int, withInfo: [String:String]?) {
+        
+        guard let uuid = withInfo?[kAdvertisingUUID] else{
+            return
+        }
+        
+        peerUUIDHash[uuid] = peerHash
+        peerHashUUID[peerHash] = uuid
+        
+        BrowserModel.updateLastTimeSeenPeer([uuid])
+        
+        //Send notification that view needs to be refreshed.
+        NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserScreenNeedsToBeRefreshed), object: self)
+    }
+    
+    func lostPeer(_ peerHash: Int) {
+        
+        //Remove from both dictionaries
+        guard let uuid = peerHashUUID.removeValue(forKey: peerHash) else{
+            return
+        }
+        
+        _ = peerUUIDHash.removeValue(forKey: uuid)
+        
+        //Send notification that view needs to be refreshed.
+        NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserScreenNeedsToBeRefreshed), object: self)
+    }
+    
+
+    func connectedWithPeer(_ peerHash: Int, peerName: String) {
+        
+        guard let peerUUID = getPeerUUIDFromHash(peerHash) else{
+            return
+        }
+        
+        storeNewPeer(peerUUID: peerUUID, peerName: peerName, isConnectedToPeer: true, completion: {
+            (storedPeer) -> Void in
+            
+            if storedPeer == nil{
+                print("Couldn't store peer info, disconnecting from \(peerName) with uuid \(peerUUID)")
+                mpcManager.disconnect()
+                
+            }else{
+                
+                //Send notification that view needs to segue to ChatRoom.
+                NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserConnectedToFirstPeer), object: self)
+            }
+        })
+    }
 }

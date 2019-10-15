@@ -11,6 +11,10 @@ import UIKit
 
 class MPCChatUtility {
     
+    class func getDeviceName()->String{
+         return UIDevice.current.name
+    }
+    
     class func getmyUserUUID()->String?{
         var returnUUID:String!
         
@@ -69,6 +73,7 @@ class MPCChatUtility {
 
 // Source: https://stackoverflow.com/questions/24126678/close-ios-keyboard-by-touching-anywhere-using-swift
 extension UIViewController {
+    
     func hideKeyboardWhenTappedAround() {
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))
         tap.cancelsTouchesInView = false

@@ -18,6 +18,8 @@ class ChatModel: NSObject{
     fileprivate var thisPeer:Peer!
     fileprivate var thisRoom:Room!
     
+    var curentBrowserModel:BrowserModel!
+    
     var getPeer: Peer{
         get{
             return thisPeer
@@ -26,7 +28,27 @@ class ChatModel: NSObject{
     
     override init() {
         super.init()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatModel.handleChatRoomHasBeenUpdated(_:)), name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: nil)
     }
+    
+    convenience init(browserModel: BrowserModel){
+        self.init()
+        
+        curentBrowserModel = browserModel
+        
+        guard let roomToJoin = curentBrowserModel.roomToJoin else{
+            fatalError("Error")
+        }
+        
+        thisRoom = roomToJoin
+        thisPeer = curentBrowserModel.getPeer
+        peerUUIDHash = curentBrowserModel.getPeerUUIDHashDictionary
+        peerHashUUID = curentBrowserModel.getPeerHashUUIDDictionary
+        
+        curentBrowserModel.setMPCMessageManagerDelegate(self)
+    }
+    
     
     convenience init(peer: Peer, peerUUIDHashDictionary: [String:Int], peerHashUUIDDictionary: [Int:String], room: Room) {
         self.init()
@@ -96,17 +118,11 @@ class ChatModel: NSObject{
         })
     }
     
-    func foundPeer(_ peerHash:Int, info: [String:String]?) -> () {
+    func addPeer(_ peerHash:Int, peerUUID: String) -> () {
+        
         //Add peers to both dictionaries
-        
-        guard let uuid = info?[kAdvertisingUUID] else{
-            return
-        }
-        
-        peerUUIDHash[uuid] = peerHash
-        peerHashUUID[peerHash] = uuid
-        
-        BrowserModel.updateLastTimeSeenPeer([uuid])
+        peerUUIDHash[peerUUID] = peerHash
+        peerHashUUID[peerHash] = peerUUID
     }
     
 
@@ -188,6 +204,100 @@ class ChatModel: NSObject{
         
     }
     
+    //MARK: Notification receivers
+    
+    @objc func handleChatRoomHasBeenUpdated(_ notification: Notification) {
+        
+        BrowserModel.findRooms([thisRoom.uuid], completion: {
+            (roomsFound) -> Void in
+            
+            guard let newRoom = roomsFound?.first else{
+                print("Error in ChatModel.handleChatRoomHasBeenUpdated(). No room was found")
+                return
+            }
+            
+            thisRoom = newRoom //Update to the latest version of room
+            
+            guard let uuidOfPeerAddedToChat = notification.userInfo?[kNotificationChatPeerUUIDKey] as? String else{
+                print("Error in ChatModel.handleChatRoomHasBeenUpdated(). \(kNotificationChatPeerUUIDKey) was not found in notification dictionary")
+                return
+            }
+            
+            
+            guard let hashOfPeerAddedToChat = getPeerHashFromUUID(uuidOfPeerAddedToChat) else{
+                print("Error in ChatModel.handleChatRoomHasBeenUpdated(). Couldn't get the hashID for peer with UUID \(uuidOfPeerAddedToChat)")
+                return
+            }
+            
+            addPeer(hashOfPeerAddedToChat, peerUUID: uuidOfPeerAddedToChat)
+            
+            //Send notification to ViewController that peer has been added to the Chat
+            NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationChatRefreshRoom), object: self, userInfo: [kNotificationChatPeerHashKey : hashOfPeerAddedToChat])
+        })
+    }
+    
+}
+
+//MARK: MPCManagerMessageDelegate methods
+extension ChatModel: MPCManagerMessageDelegate {
+    
+    func lostPeer(_ peerHash: Int, peerName: String) {
+        
+        //Check to see if this is a peer we were connected to
+        lostPeer(peerHash, completion: {
+            (success) -> Void in
+            
+            if success{
+                
+                //HW3: Need to update the lastTimeConnected when an item is already saved to CoreData. This is when you disconnected from the user. Hint: use peerHash to find peer.
+                
+                //Notify ViewController the peer was lost
+                NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationChatPeerWasLost), object: self, userInfo: [kNotificationChatPeerNameKey: peerName])
+            }
+            
+        })
+        
+    }
+    
+    func messageReceived(_ fromPeerHash:Int, data: Data) {
+        
+        //Convert the data (Data) into a Dictionary object
+        let dataDictionary = NSKeyedUnarchiver.unarchiveObject(with: data) as! [String:String]
+        
+        //Check if there's an entry with the kCommunicationsMessageContentTerm key
+        guard let message = dataDictionary[kCommunicationsMessageContentTerm] else{
+            return
+        }
+        
+        if message != kCommunicationsEndConnectionTerm  {
+            
+            //HW3: Hint, this is checking for kCommunicationsMessageUUIDTerm, what if we checked for kBrowserPeerRoomName to detect a room name?
+            guard let uuid = dataDictionary[kCommunicationsMessageUUIDTerm] else{
+                print("Error: received messaged is lacking UUID")
+                return
+            }
+            
+            guard let fromPeerUUID = getPeerUUIDFromHash(fromPeerHash) else{
+                return
+            }
+            
+            storeNewMessage(uuid, content: message, fromPeer: fromPeerUUID, completion: {
+                (messageReceived) -> Void in
+                
+                guard let message = messageReceived else{
+                    return
+                }
+                
+                //Notify ViewController that a new message was posted
+                NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationChatNewMessagePosted), object: self, userInfo: [kNotificationChatPeerMessageKey: message])
+                
+            })
+            
+        }else{
+            //fromPeerHash want's to disconnect
+            print("\(fromPeerHash) is about to End this chat, prepare for disconnecton.")
+        }
+    }
     
 }
 

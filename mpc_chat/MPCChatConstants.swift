@@ -21,6 +21,20 @@ let kNotificationMPCIsInitialized                       = "mpcIsInitializedNotif
 let kNotificationCoreDataInitialized                    = "coreDataInitializedNotification" //CoreData notifies appDelega
 let kNotificationCoreDataIsReady                        = "coreDataIsReadyNotification" //After setting CoreData flags, notifies everyone else
 let kNotificationBrowserUserTappedCell                  = "browserUserTappedCell"
+let kNotificationBrowserConnectedToFirstPeer            = "browserConnectedToFirstPeer"
+let kNotificationBrowserHasAddedUserToRoom              = "browserHasAddedUserToRoom"
+let kNotificationBrowserScreenNeedsToBeRefreshed        = "browserScreenNeedsToBeRefreshed"
+let kNotificationChatRefreshRoom                        = "chatRefreshRoom"
+let kNotificationChatPeerWasLost                        = "chatPeerWasLost"
+let kNotificationChatNewMessagePosted                   = "chatNewMessagePosted"
+
+
+// MARK: - Local notification keys
+let kNotificationChatPeerHashKey                        = "chatPeerHashKey"
+let kNotificationChatPeerUUIDKey                        = "chatPeerUUIDKey"
+let kNotificationChatPeerNameKey                        = "chatPeerNameKey"
+let kNotificationChatPeerMessageKey                     = "chatPeerMessageKey"
+
 
 // MARK: - SendReceive Dictionary terms
 let kCommunicationsMessageContentTerm                   = "message"
@@ -40,7 +54,7 @@ let kCoreDataDBName                                     = "mpc_chatDB"
 let kCoreDataEntityPeer                                 = "Peer"
 let kCoreDataPeerAttributeCreatedAt                     = "createdAt"
 let kCoreDataPeerAttributeModifiedAt                    = "modifiedAt"
-let kCoreDataPeerAttributepeerUUID                      = "uuid"
+let kCoreDataPeerAttributePeerUUID                      = "uuid"
 let kCoreDataPeerAttributePeerName                      = "peerName"
 let kCoreDataPeerAttributeLastConnected                 = "lastConnected"
 let kCoreDataPeerAttributeLastSeen                      = "lastSeen"

@@ -12,17 +12,14 @@
 //
 
 import UIKit
-import MultipeerConnectivity
+
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
     
-    var mpcManager: MPCManager!
     fileprivate var coreDataManager: CoreDataManager!
-    var peerUUID = ""
-    var peerDisplayName = ""
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -40,22 +37,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.handleCoreDataInitializedReceived(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
+        
         self.coreDataManager = CoreDataManager.sharedCoreDataManager
-        
-        peerDisplayName = UIDevice.current.name
-        
-        guard let discovery = MPCChatUtility.buildAdvertisingDictionary() else{
-            return false
-        }
-        
-        guard let uuid = discovery[kAdvertisingUUID] else {
-            return false
-        }
-        
-        peerUUID = uuid
-        
-        self.mpcManager = MPCManager(kAppName, advertisingName: peerDisplayName, discoveryInfo: discovery)
-        
         return true
     }
 

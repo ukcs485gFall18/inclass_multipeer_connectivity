@@ -151,7 +151,7 @@ class ChatModel: NSObject{
     
     func changeRoomName(_ name:String) ->(){
         
-        //ToDo: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
+        //HW3: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
         let oldRoomName = thisRoom.name
         thisRoom.updated(name)
         

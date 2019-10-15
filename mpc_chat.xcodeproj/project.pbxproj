@@ -79,6 +79,24 @@
 			isa = PBXGroup;
 			children = (
 				918A49A221791F8D00B3DE31 /* mpc_chat.xcdatamodeld */,
+				914D54382355F629007C00C2 /* CoreData */,
+			);
+			path = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		914D54372355F5F5007C00C2 /* Connectivity */ = {
+			isa = PBXGroup;
+			children = (
+				91525BCA1CBC6214008C858E /* MPCManager.swift */,
+				91525BC51CBC6166008C858E /* MPCChatConstants.swift */,
+				91D3266421855037003C8096 /* MPCChatUtility.swift */,
+			);
+			path = Connectivity;
+			sourceTree = "<group>";
+		};
+		914D54382355F629007C00C2 /* CoreData */ = {
+			isa = PBXGroup;
+			children = (
 				9119007D218237F100EB17A9 /* CoreDataManager.swift */,
 				91D32674218B7522003C8096 /* Message+CoreDataClass.swift */,
 				91D32675218B7522003C8096 /* Message+CoreDataProperties.swift */,
@@ -87,7 +105,7 @@
 				91D32668218B667F003C8096 /* Room+CoreDataClass.swift */,
 				91D32669218B667F003C8096 /* Room+CoreDataProperties.swift */,
 			);
-			path = "Supporting Files";
+			path = CoreData;
 			sourceTree = "<group>";
 		};
 		91525B881CBC5CC2008C858E = {
@@ -119,9 +137,7 @@
 				9135EAB8218E2C1000E1D20C /* ChatModel.swift */,
 				91525BC31CBC6166008C858E /* ChatViewController.swift */,
 				91525BC21CBC6166008C858E /* ChatTableViewCell.swift */,
-				91525BCA1CBC6214008C858E /* MPCManager.swift */,
-				91525BC51CBC6166008C858E /* MPCChatConstants.swift */,
-				91D3266421855037003C8096 /* MPCChatUtility.swift */,
+				914D54372355F5F5007C00C2 /* Connectivity */,
 				91525B9B1CBC5CC3008C858E /* Assets.xcassets */,
 				91525BCC1CBC6900008C858E /* Main.storyboard */,
 				91525B9D1CBC5CC3008C858E /* LaunchScreen.storyboard */,

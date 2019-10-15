@@ -21,7 +21,7 @@ class ChatViewController: UIViewController {
     @IBOutlet weak var txtChat: UITextField!
     @IBOutlet weak var tblChat: UITableView!
 
-    //ToDo: Need to add a button the storyboard that when tapped, opens a subView or openning to BrowserViewController. Here the user keep see more peers around and add them to the chat. Note: Only owners should be able to add people to the Chat. If someone is not the owner, they can Browse, but tapping and adding a new user to the chat should be disabled
+    //HW3: Need to add a button the storyboard that when tapped, opens a subView or openning to BrowserViewController. Here the user keep see more peers around and add them to the chat. Note: Only owners should be able to add people to the Chat. If someone is not the owner, they can Browse, but tapping and adding a new user to the chat should be disabled
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -51,7 +51,7 @@ class ChatViewController: UIViewController {
         
         roomNameTextField.text = model.getRoomName()
         
-        //ToDo: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
+        //HW3: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
         roomNameTextField.isEnabled = true
         
         if isConnected{
@@ -75,7 +75,7 @@ class ChatViewController: UIViewController {
         if roomNameTextField.text! != model.getRoomName(){
             model.changeRoomName(roomNameTextField.text!)
             
-            //ToDo: Need to send user a message (shouldn't show on their screen) with the new roomName. Remember, only the owner of a room should be able to change the name of the room. If a Peer is not the owner, the change label should be disabled
+            //HW3: Need to send user a message (shouldn't show on their screen) with the new roomName. Remember, only the owner of a room should be able to change the name of the room. If a Peer is not the owner, the change label should be disabled
         }
     }
     
@@ -127,7 +127,7 @@ extension ChatViewController: UITextFieldDelegate {
                 return
             }
             
-            //ToDo: This is how you send a meesage. This is a hint for sending the newRoom name to the user. What if you send a similar message with kBrowserPeerRoomName in the key and the value of the newRoomName?
+            //HW3: This is how you send a meesage. This is a hint for sending the newRoom name to the user. What if you send a similar message with kBrowserPeerRoomName in the key and the value of the newRoomName?
             let messageDictionary: [String: String] = [
                 kCommunicationsMessageContentTerm: textField.text!,
                 kCommunicationsMessageUUIDTerm: message.uuid
@@ -181,7 +181,7 @@ extension ChatViewController: MPCManagerMessageDelegate {
                 
                 alert.addAction(doneAction)
                 
-                //ToDo: Need to update the lastTimeConnected when an item is already saved to CoreData. This is when you disconnected from the user. Hint: use peerHash to find peer.
+                //HW3: Need to update the lastTimeConnected when an item is already saved to CoreData. This is when you disconnected from the user. Hint: use peerHash to find peer.
                 
                 OperationQueue.main.addOperation({ () -> Void in
                     self.present(alert, animated: true, completion: nil)
@@ -208,7 +208,7 @@ extension ChatViewController: MPCManagerMessageDelegate {
         
         if message != kCommunicationsEndConnectionTerm  {
             
-            //ToDo: Hint, this is checking for kCommunicationsMessageUUIDTerm, what if we checked for kBrowserPeerRoomName to detect a room name?
+            //HW3: Hint, this is checking for kCommunicationsMessageUUIDTerm, what if we checked for kBrowserPeerRoomName to detect a room name?
             guard let uuid = dataDictionary[kCommunicationsMessageUUIDTerm] else{
                 print("Error: received messaged is lacking UUID")
                 return

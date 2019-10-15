@@ -194,7 +194,7 @@ class BrowserModel: NSObject{
                 return
             }
             
-            //ToDo: Need to update the lastTimeConnected when an item is already saved to CoreData. Hint should use, "peer" above to make update
+            //HW3: Need to update the lastTimeConnected when an item is already saved to CoreData. Hint should use, "peer" above to make update
             print("Found saved peer - \(peer.peerName), with uuid value - \(peerUUID). Updated lastSeen information")
             completion(peer)
             
@@ -231,7 +231,7 @@ class BrowserModel: NSObject{
             findRooms(self.thisPeer, withPeer: peer, completion: {
                 (roomsFound) -> Void in
                 
-                //ToDo: How do you modify this to return all rooms found related to the users?
+                //HW3: How do you modify this to return all rooms found related to the users?
                 guard let room = roomsFound?.first else{
                     completion(nil)
                     return
@@ -360,7 +360,7 @@ class BrowserModel: NSObject{
                 return
             }
             
-            oldRoom.name = roomName //ToDo: Saves room name if sender has changed it. Fix this to check to make sure the person changing the room name is the owner
+            oldRoom.name = roomName //HW3: Saves room name if sender has changed it. Fix this to check to make sure the person changing the room name is the owner
             oldRoom.addToPeers(self.thisPeer)
             
             BrowserModel.findPeers([ownerUUID], completion: {

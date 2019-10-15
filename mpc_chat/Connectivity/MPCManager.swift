@@ -51,12 +51,7 @@ class MPCManager: NSObject {
             return isAdvertising
         }
     }
-    
-    //Don't call, won't start up MPC
-    override init() {
-        super.init()
-    }
-    
+        
     convenience init(_ serviceType: String, advertisingName: String, discoveryInfo: [String:String]) {
         
         self.init()
@@ -245,6 +240,8 @@ extension MPCManager: MCSessionDelegate {
                 self.messageDelegate?.lostPeer(peerID.hash, peerName: peerID.displayName)
                 self.managerDelegate?.lostPeer(peerID.hash)
             }
+        @unknown default:
+            print("Hit MPCManager.MCSessionDelegate() hit an unknown state: \(state)")
         }
     }
     

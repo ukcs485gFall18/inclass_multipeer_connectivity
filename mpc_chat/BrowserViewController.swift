@@ -25,7 +25,7 @@ class BrowserViewController: UIViewController {
         switch browserSegment.selectedSegmentIndex {
         case 0: //This is the original browser, already works correctly
             tblPeers.reloadData()
-        case 1: //This segment to show Peers that the user has connected to before, but only the ones who are currently fund on browser. If you are around a 100 peers, but only want to see the ones you know. Should sort by lastTimeConnected. The work should be done in the BrowserModel
+        case 1: //This segment should list Peers that the user has connected to before, but only the ones who are currently found on browser. If you are around a 100 peers, but only want to see the ones you know. Should sort by lastTimeConnected. The logistics should be carried out in the BrowserModel
             tblPeers.reloadData()
         case 2: //This should list all if the chats you have been in before and be sorted from modifiedAt. When a user selects a particular chat, it should segue to ChatViewController and display all of the messages. Since the user is not connected at this time, isConnected should be false, and the user should not be able to add any new data to the chat
             tblPeers.reloadData()

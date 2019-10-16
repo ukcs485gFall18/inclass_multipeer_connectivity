@@ -31,6 +31,7 @@ class ChatViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handlePeerWasLost(_:)), name: Notification.Name(rawValue: kNotificationChatPeerWasLost), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleNewMessagePosted(_:)), name: Notification.Name(rawValue: kNotificationChatNewMessagePosted), object: nil)
         
+        
         // Do any additional setup after loading the view.
         //appDelegate.mpcManager.messageDelegate = model
         
@@ -126,6 +127,15 @@ class ChatViewController: UIViewController {
         })
     }
     
+    func checkIfLastConnection(){
+        //If you are the last one in the Chat, leave this room for now
+        if self.model.curentBrowserModel.getPeersConnectedTo().count < 2{
+            OperationQueue.main.addOperation({ () -> Void in
+                self.dismiss(animated: true, completion: nil)
+            })
+        }
+    }
+    
     //MARK: Notification receivers
     @objc func handlePeerAddedToRoom(_ notification: Notification) {
         
@@ -182,12 +192,7 @@ class ChatViewController: UIViewController {
         
         let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
             
-            //If you are the last one in the Chat, leave this room for now
-            if self.model.curentBrowserModel.getPeersConnectedTo().count < 2{
-                OperationQueue.main.addOperation({ () -> Void in
-                    self.dismiss(animated: true, completion: nil)
-                })
-            }
+            self.checkIfLastConnection()
         }
         
         alert.addAction(doneAction)

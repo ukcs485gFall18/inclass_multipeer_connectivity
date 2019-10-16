@@ -241,7 +241,7 @@ class ChatModel: NSObject{
 //MARK: MPCManagerMessageDelegate methods
 extension ChatModel: MPCManagerMessageDelegate {
     
-    func lostPeer(_ peerHash: Int, peerName: String) {
+    func peerDisconnected(_ peerHash: Int, peerName: String) {
         
         //Check to see if this is a peer we were connected to
         lostPeer(peerHash, completion: {
@@ -296,6 +296,7 @@ extension ChatModel: MPCManagerMessageDelegate {
         }else{
             //fromPeerHash want's to disconnect
             print("\(fromPeerHash) is about to End this chat, prepare for disconnecton.")
+            
         }
     }
     

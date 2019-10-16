@@ -83,7 +83,7 @@ protocol MPCManagerMessageDelegate {
             
      
     */
-    func lostPeer(_ peerHash: Int, peerName: String)
+    func peerDisconnected(_ peerHash: Int, peerName: String)
     
     /**
      
@@ -347,10 +347,8 @@ extension MPCManager: MCSessionDelegate {
             
         case .notConnected:
             print("Not connected to \(peerID.displayName) with hash \(peerID.hash) in session  \(session)")
-            OperationQueue.main.addOperation{ () -> Void in
-                self.messageDelegate?.lostPeer(peerID.hash, peerName: peerID.displayName)
-                self.managerDelegate?.lostPeer(peerID.hash)
-            }
+            self.messageDelegate?.peerDisconnected(peerID.hash, peerName: peerID.displayName)
+                
         @unknown default:
             print("Hit MPCManager.MCSessionDelegate() hit an unknown state: \(state)")
         }
@@ -397,11 +395,11 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
         foundPeers.removeValue(forKey: peerID.hash)
         
         if isThisAConnectedPeer(peerID) {
-            messageDelegate?.lostPeer(peerID.hash, peerName: peerID.displayName)
-        }else{
-            //Lost a peer that was in browser
-            managerDelegate?.lostPeer(peerID.hash)
+            messageDelegate?.peerDisconnected(peerID.hash, peerName: peerID.displayName)
         }
+        
+        //Lost a peer that was in browser
+        managerDelegate?.lostPeer(peerID.hash)
     }
     
     func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {

@@ -27,6 +27,7 @@ let kNotificationBrowserScreenNeedsToBeRefreshed        = "browserScreenNeedsToB
 let kNotificationChatRefreshRoom                        = "chatRefreshRoom"
 let kNotificationChatPeerWasLost                        = "chatPeerWasLost"
 let kNotificationChatNewMessagePosted                   = "chatNewMessagePosted"
+//let kNotificationChat
 
 
 // MARK: - Local notification keys

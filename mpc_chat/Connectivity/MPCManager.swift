@@ -347,8 +347,11 @@ extension MPCManager: MCSessionDelegate {
             
         case .notConnected:
             print("Not connected to \(peerID.displayName) with hash \(peerID.hash) in session  \(session)")
-            self.messageDelegate?.peerDisconnected(peerID.hash, peerName: peerID.displayName)
-                
+            //OperationQueue.main.addOperation{ () -> Void in
+            
+                self.messageDelegate?.peerDisconnected(peerID.hash, peerName: peerID.displayName)
+             
+            //}
         @unknown default:
             print("Hit MPCManager.MCSessionDelegate() hit an unknown state: \(state)")
         }

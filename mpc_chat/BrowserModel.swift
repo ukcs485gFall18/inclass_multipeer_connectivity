@@ -362,8 +362,10 @@ class BrowserModel: NSObject{
                         
                         if save(){
                             
-                            //Send notification that room has changed. This is needed for cases when the BrowserModel is used to add additional users to a room
-                            NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: self, userInfo: notificationInfo)
+                            OperationQueue.main.addOperation{ () -> Void in
+                                //Send notification that room has changed. This is needed for cases when the BrowserModel is used to add additional users to a room
+                                NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: self, userInfo: notificationInfo)
+                            }
                             
                             completion(newRoom)
                         }else{
@@ -381,8 +383,10 @@ class BrowserModel: NSObject{
                     
                     if save(){
                         
-                        //Send notification that room has changed. This is needed for cases when the BrowserModel is used to add additional users to a room
-                        NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: self, userInfo: notificationInfo)
+                        OperationQueue.main.addOperation{ () -> Void in
+                            //Send notification that room has changed. This is needed for cases when the BrowserModel is used to add additional users to a room
+                            NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: self, userInfo: notificationInfo)
+                        }
                         
                         completion(newRoom)
                     }else{
@@ -497,8 +501,10 @@ extension BrowserModel: MPCManagerDelegate{
         
         BrowserModel.updateLastTimeSeenPeer([uuid])
         
-        //Send notification that view needs to be refreshed.
-        NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserScreenNeedsToBeRefreshed), object: self)
+        OperationQueue.main.addOperation{ () -> Void in
+            //Send notification that view needs to be refreshed. Notice how this needs to be called main thread
+            NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserScreenNeedsToBeRefreshed), object: self)
+        }
     }
     
     func lostPeer(_ peerHash: Int) {
@@ -510,8 +516,10 @@ extension BrowserModel: MPCManagerDelegate{
         
         _ = peerUUIDHash.removeValue(forKey: uuid)
         
-        //Send notification that view needs to be refreshed.
-        NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserScreenNeedsToBeRefreshed), object: self)
+        OperationQueue.main.addOperation{ () -> Void in
+            //Send notification that view needs to be refreshed. Notice how this needs to be called on the main thread
+            NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserScreenNeedsToBeRefreshed), object: self)
+        }
     }
     
 
@@ -530,8 +538,10 @@ extension BrowserModel: MPCManagerDelegate{
                 
             }else{
                 
-                //Send notification that view needs to segue to ChatRoom.
-                NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserConnectedToFirstPeer), object: self)
+                OperationQueue.main.addOperation{ () -> Void in
+                    //Send notification that view needs to segue to ChatRoom. Notice how this needs to be called on the main thread
+                    NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserConnectedToFirstPeer), object: self)
+                }
             }
         })
     }

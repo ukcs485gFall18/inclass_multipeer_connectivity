@@ -16,13 +16,17 @@ class ChatViewController: UIViewController {
     var messagesToDisplay = [Message]()
     var model = ChatModel() //This initialization is replaced by the BrowserView segue preperation
     var isConnected = false
-    //var viewDissapeared = false
 
     @IBOutlet weak var roomNameTextField: UITextField!
     @IBOutlet weak var txtChat: UITextField!
     @IBOutlet weak var tblChat: UITableView!
-
+    @IBOutlet weak var connectedPeersButton: UIButton!
+    
     //HW3: Need to add a button the storyboard that when tapped, opens a subView or openning to BrowserViewController. Here the user keep see more peers around and add them to the chat. Note: Only owners should be able to add people to the Chat. If someone is not the owner, they can Browse, but tapping and adding a new user to the chat should be disabled
+    
+    @IBAction func connectedPeersButtonTapped(_ sender: Any) {
+        
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -60,6 +64,8 @@ class ChatViewController: UIViewController {
         //HW3: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
         roomNameTextField.isEnabled = true
         
+        setConnectedPeersButton()
+        
         if isConnected{
             txtChat.isEnabled = true
             txtChat.isHidden = false
@@ -69,13 +75,23 @@ class ChatViewController: UIViewController {
         }
     }
     
-    /*
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
+    func setConnectedPeersButton(){
+        let numberOfConnectedPeers = self.model.curentBrowserModel.getPeersConnectedTo().count
         
-        viewDissapeared = true
-    }*/
-
+        let stringToShow:String!
+        
+        if numberOfConnectedPeers > 1{
+            stringToShow = "\(numberOfConnectedPeers)" + " Peers Connected"
+        }else{
+            stringToShow = "\(numberOfConnectedPeers)" + " Peer Connected"
+        }
+    
+        OperationQueue.main.addOperation({ () -> Void in
+            self.connectedPeersButton.setTitle(stringToShow, for: .normal)
+        })
+    }
+    
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -139,6 +155,8 @@ class ChatViewController: UIViewController {
     //MARK: Notification receivers
     @objc func handlePeerAddedToRoom(_ notification: Notification) {
         
+        setConnectedPeersButton()
+        
         guard let peerAddedHash = notification.userInfo?[kNotificationChatPeerHashKey] as? Int else{
             print("Error in ChatViewController.handlePeerAddedToRoom(). The key \(kNotificationChatPeerHashKey) was not found in the notification")
             return
@@ -160,7 +178,6 @@ class ChatViewController: UIViewController {
            
             //Only segue if this view if the main view
             if self.view.superview != nil {
-            //if self.viewDissapeared == false{
                 self.present(alert, animated: true, completion: nil)
             }
         })
@@ -182,6 +199,8 @@ class ChatViewController: UIViewController {
     
     @objc func handlePeerWasLost(_ notification: Notification) {
     
+        setConnectedPeersButton()
+        
         guard let peerName = notification.userInfo?[kNotificationChatPeerNameKey] as? String else{
             print("Error in ChatViewController.handlePeerWasLost(). The key \(kNotificationChatPeerNameKey) was not found in the notification")
             return
@@ -201,7 +220,6 @@ class ChatViewController: UIViewController {
            
             //Only segue if this view if the main view
             if self.view.superview != nil {
-            //if self.viewDissapeared == false{
                 self.present(alert, animated: true, completion: nil)
             }
         })

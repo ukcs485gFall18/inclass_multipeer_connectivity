@@ -231,8 +231,10 @@ class ChatModel: NSObject{
             
             addPeer(hashOfPeerAddedToChat, peerUUID: uuidOfPeerAddedToChat)
             
-            //Send notification to ViewController that peer has been added to the Chat
-            NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationChatRefreshRoom), object: self, userInfo: [kNotificationChatPeerHashKey : hashOfPeerAddedToChat])
+            OperationQueue.main.addOperation{ () -> Void in
+                //Send notification to ViewController that peer has been added to the Chat. Notice how this needs to be called on the main thread
+                NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationChatRefreshRoom), object: self, userInfo: [kNotificationChatPeerHashKey : hashOfPeerAddedToChat])
+            }
         })
     }
     
@@ -251,8 +253,11 @@ extension ChatModel: MPCManagerMessageDelegate {
                 
                 //HW3: Need to update the lastTimeConnected when an item is already saved to CoreData. This is when you disconnected from the user. Hint: use peerHash to find peer.
                 
-                //Notify ViewController the peer was lost
-                NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationChatPeerWasLost), object: self, userInfo: [kNotificationChatPeerNameKey: peerName])
+                OperationQueue.main.addOperation{ () -> Void in
+                    
+                    //Notify ViewController the peer was lost. Notice how this needs to be called on the main thread
+                    NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationChatPeerWasLost), object: self, userInfo: [kNotificationChatPeerNameKey: peerName])
+                }
             }
             
         })
@@ -288,8 +293,10 @@ extension ChatModel: MPCManagerMessageDelegate {
                     return
                 }
                 
-                //Notify ViewController that a new message was posted
-                NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationChatNewMessagePosted), object: self, userInfo: [kNotificationChatPeerMessageKey: message])
+                OperationQueue.main.addOperation{ () -> Void in
+                    //Notify ViewController that a new message was posted. Notice how this needs to be called on the main thread
+                    NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationChatNewMessagePosted), object: self, userInfo: [kNotificationChatPeerMessageKey: message])
+                }
                 
             })
             

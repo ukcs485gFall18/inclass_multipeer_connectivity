@@ -193,7 +193,7 @@
                                 </items>
                             </toolbar>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" translatesAutoresizingMaskIntoConstraints="NO" id="EPR-X0-cY4">
-                                <rect key="frame" x="0.0" y="77" width="414" height="731"/>
+                                <rect key="frame" x="0.0" y="77" width="414" height="685"/>
                                 <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <prototypes>
                                     <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="idCell" rowHeight="44" id="3e6-31-vtw" customClass="ChatTableViewCell" customModule="mpc_chat" customModuleProvider="target">
@@ -342,6 +342,13 @@
                                     </tableViewCell>
                                 </prototypes>
                             </tableView>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="EzU-Rw-MIl">
+                                <rect key="frame" x="141" y="770" width="132" height="30"/>
+                                <state key="normal" title="0 Peers Connected"/>
+                                <connections>
+                                    <action selector="connectedPeersButtonTapped:" destination="vpC-FC-MdX" eventType="touchUpInside" id="MSJ-RW-7mX"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
@@ -350,14 +357,15 @@
                             <constraint firstItem="sJQ-gp-w8U" firstAttribute="leading" secondItem="O24-t1-w15" secondAttribute="leading" id="4zi-cw-CAP"/>
                             <constraint firstAttribute="trailing" secondItem="EPR-X0-cY4" secondAttribute="trailing" id="5do-ye-6EP"/>
                             <constraint firstItem="EPR-X0-cY4" firstAttribute="leading" secondItem="O24-t1-w15" secondAttribute="leading" id="6O0-7v-i6O"/>
+                            <constraint firstItem="EzU-Rw-MIl" firstAttribute="top" secondItem="EPR-X0-cY4" secondAttribute="bottom" constant="8" id="6hJ-En-7UC"/>
                             <constraint firstAttribute="trailing" secondItem="sJQ-gp-w8U" secondAttribute="trailing" constant="15" id="6hw-he-Ftr"/>
                             <constraint firstItem="sJQ-gp-w8U" firstAttribute="leading" secondItem="O24-t1-w15" secondAttribute="leading" constant="15" id="ADT-FO-TDI"/>
+                            <constraint firstItem="XZa-Eh-IEC" firstAttribute="top" secondItem="EzU-Rw-MIl" secondAttribute="bottom" constant="8" id="Crl-qP-Qp1"/>
                             <constraint firstItem="v3j-Nm-fKf" firstAttribute="top" secondItem="09p-We-bCf" secondAttribute="bottom" id="F88-9h-JNK"/>
                             <constraint firstAttribute="trailing" secondItem="sJQ-gp-w8U" secondAttribute="trailing" constant="15" id="GDu-3n-QWN"/>
                             <constraint firstItem="sJQ-gp-w8U" firstAttribute="top" secondItem="v3j-Nm-fKf" secondAttribute="bottom" constant="35" id="H2d-jK-dT2"/>
                             <constraint firstAttribute="trailing" secondItem="EPR-X0-cY4" secondAttribute="trailing" id="J7z-nV-8o5"/>
                             <constraint firstItem="sJQ-gp-w8U" firstAttribute="top" secondItem="v3j-Nm-fKf" secondAttribute="bottom" constant="5" id="Lly-AH-j6d"/>
-                            <constraint firstItem="EPR-X0-cY4" firstAttribute="bottom" secondItem="XZa-Eh-IEC" secondAttribute="top" id="QU2-sA-v5b"/>
                             <constraint firstItem="EPR-X0-cY4" firstAttribute="trailing" secondItem="v3j-Nm-fKf" secondAttribute="trailing" id="Sbf-Oc-Sdu"/>
                             <constraint firstItem="sJQ-gp-w8U" firstAttribute="top" secondItem="v3j-Nm-fKf" secondAttribute="bottom" id="TCV-o3-toG"/>
                             <constraint firstItem="sJQ-gp-w8U" firstAttribute="leading" secondItem="O24-t1-w15" secondAttribute="leading" constant="15" id="TuN-Ne-KIk"/>
@@ -367,6 +375,7 @@
                             <constraint firstItem="EPR-X0-cY4" firstAttribute="leading" secondItem="O24-t1-w15" secondAttribute="leadingMargin" constant="-16" id="ZcT-4J-jR2"/>
                             <constraint firstItem="sJQ-gp-w8U" firstAttribute="leading" secondItem="O24-t1-w15" secondAttribute="leading" id="auH-8K-4bu"/>
                             <constraint firstAttribute="trailing" secondItem="sJQ-gp-w8U" secondAttribute="trailing" id="b1o-Az-zaD"/>
+                            <constraint firstItem="EzU-Rw-MIl" firstAttribute="centerX" secondItem="EPR-X0-cY4" secondAttribute="centerX" id="bQj-2p-uYD"/>
                             <constraint firstItem="EPR-X0-cY4" firstAttribute="leading" secondItem="O24-t1-w15" secondAttribute="leading" id="frr-m5-zQR"/>
                             <constraint firstItem="XZa-Eh-IEC" firstAttribute="top" secondItem="EPR-X0-cY4" secondAttribute="bottom" id="fyo-ja-Lon"/>
                             <constraint firstItem="v3j-Nm-fKf" firstAttribute="leading" secondItem="O24-t1-w15" secondAttribute="leading" id="gH5-Dg-baU"/>
@@ -408,6 +417,7 @@
                         </variation>
                     </view>
                     <connections>
+                        <outlet property="connectedPeersButton" destination="EzU-Rw-MIl" id="l1o-QY-CxD"/>
                         <outlet property="roomNameTextField" destination="sCz-Bb-QPy" id="GEo-jI-n3d"/>
                         <outlet property="tblChat" destination="EPR-X0-cY4" id="blk-n2-nUR"/>
                         <outlet property="txtChat" destination="sJQ-gp-w8U" id="NaN-MH-4Er"/>
@@ -415,7 +425,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="4o8-ud-Jw1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1058.4000000000001" y="431.33433283358323"/>
+            <point key="canvasLocation" x="1057.9710144927537" y="431.25"/>
         </scene>
     </scenes>
 </document>

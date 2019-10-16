@@ -117,11 +117,18 @@ class ChatViewController: UIViewController {
         let messageDictionary: [String: String] = [kCommunicationsMessageContentTerm: kCommunicationsEndConnectionTerm]
         let connectedPeers = model.curentBrowserModel.getPeersConnectedTo()
         
+        //Just incase no users are connected, but we are stuck here. If no connections valid, need to head back to Browser
+        if self.model.curentBrowserModel.getPeersConnectedTo().count == 0{
+            
+            self.dismiss(animated: true, completion: { () -> Void in
+                print("Disconneced from session because no users are connected")
+            })
+        }
         
         if model.curentBrowserModel.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
             
-            //Give some time for connectedPeer to receive disconnect info
-            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
+            //Give some time for connectedPeer to receive disconnect info and properly disconnect themselves
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1), execute: {
                 self.model.curentBrowserModel.disconnect()
             })
             

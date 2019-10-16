@@ -180,6 +180,15 @@ class BrowserViewController: UIViewController {
             actionSheet.addAction(cancelAction)
             
             OperationQueue.main.addOperation{ () -> Void in
+                
+                //Got popover code from https://medium.com/@nickmeehan/actionsheet-popover-on-ipad-in-swift-5768dfa82094
+                if let popoverController = actionSheet.popoverPresentationController{
+                    
+                    popoverController.sourceView = self.view
+                    popoverController.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+                    popoverController.permittedArrowDirections = []
+                }
+                
                 self.present(actionSheet, animated: true, completion: nil)
             }
             

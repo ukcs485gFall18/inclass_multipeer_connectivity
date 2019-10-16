@@ -347,6 +347,9 @@
                                 <state key="normal" title="0 Peers Connected"/>
                                 <connections>
                                     <action selector="connectedPeersButtonTapped:" destination="vpC-FC-MdX" eventType="touchUpInside" id="MSJ-RW-7mX"/>
+                                    <segue destination="egx-XD-c3H" kind="popoverPresentation" identifier="goToConnectedUsers" popoverAnchorView="EzU-Rw-MIl" id="Sl2-tx-VVt">
+                                        <popoverArrowDirection key="popoverArrowDirection" up="YES" down="YES" left="YES" right="YES"/>
+                                    </segue>
                                 </connections>
                             </button>
                         </subviews>
@@ -426,6 +429,50 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="4o8-ud-Jw1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1057.9710144927537" y="431.25"/>
+        </scene>
+        <!--Connected Users-->
+        <scene sceneID="tRp-bL-XBI">
+            <objects>
+                <viewController title="Connected Users" id="egx-XD-c3H" customClass="ConnectedUsersViewController" customModule="mpc_chat" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="jna-fT-eY5"/>
+                        <viewControllerLayoutGuide type="bottom" id="qN2-C3-GlZ"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="EJk-6q-inA">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="842"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="prW-rL-rrp">
+                                <rect key="frame" x="20" y="78" width="374" height="722"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                <prototypes>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="idCellConnected" id="I7I-a9-ven">
+                                        <rect key="frame" x="0.0" y="28" width="374" height="43.666667938232422"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="I7I-a9-ven" id="oSe-ia-eRa">
+                                            <rect key="frame" x="0.0" y="0.0" width="374" height="43.666667938232422"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                        </tableViewCellContentView>
+                                    </tableViewCell>
+                                </prototypes>
+                            </tableView>
+                        </subviews>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                        <constraints>
+                            <constraint firstItem="prW-rL-rrp" firstAttribute="leading" secondItem="EJk-6q-inA" secondAttribute="leading" constant="20" id="Dt5-5L-upo"/>
+                            <constraint firstItem="prW-rL-rrp" firstAttribute="top" secondItem="jna-fT-eY5" secondAttribute="bottom" constant="22" id="Izv-hg-Vrx"/>
+                            <constraint firstAttribute="trailing" secondItem="prW-rL-rrp" secondAttribute="trailing" constant="20" id="SBB-mV-hFa"/>
+                            <constraint firstItem="qN2-C3-GlZ" firstAttribute="top" secondItem="prW-rL-rrp" secondAttribute="bottom" constant="8" id="vfS-ih-R5N"/>
+                        </constraints>
+                    </view>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" barStyle="black"/>
+                    <connections>
+                        <outlet property="connectedUsersTableView" destination="prW-rL-rrp" id="YIf-wM-TPa"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Hke-cE-7Kw" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2037.68115942029" y="444.64285714285711"/>
         </scene>
     </scenes>
 </document>

@@ -486,7 +486,7 @@ class BrowserModel: NSObject{
     
 }
 
-// MARK: MPCManager delegate methods implementation
+// MARK: - MPCManager delegate methods implementation
 extension BrowserModel: MPCManagerDelegate{
     
     //HW3: Fix BrowserTable refreshing/reloading when MPC Manager refreshes and "Peers" is the segment selected

@@ -26,14 +26,7 @@ class ChatViewController: UIViewController {
     //HW3: Need to add a button the storyboard that when tapped, opens a subView or openning to BrowserViewController. Here the user keep see more peers around and add them to the chat. Note: Only owners should be able to add people to the Chat. If someone is not the owner, they can Browse, but tapping and adding a new user to the chat should be disabled
     
     @IBAction func connectedPeersButtonTapped(_ sender: Any) {
-        
-        if self.view.subviews.last == connectedTableView{
-            self.view.subviews.last?.removeFromSuperview()
-        }else{
-            self.view.addSubview(connectedTableView)
-        }
-        
-        
+        performSegue(withIdentifier: "goToConnectedUsers", sender: self)
     }
     
     override func viewDidLoad() {
@@ -45,12 +38,6 @@ class ChatViewController: UIViewController {
         
         
         // Do any additional setup after loading the view.
-        let connectedFrame = CGRect(x: 50,y: 400,width: 320,height: 200)
-        connectedTableView = UITableView(frame: connectedFrame)
-        connectedTableView.delegate = self
-        connectedTableView.dataSource = self
-        connectedTableView.register(UITableViewCell.self, forCellReuseIdentifier: "idCellConnected")
-        
         chatTable.delegate = self
         chatTable.dataSource = self
         chatTable.estimatedRowHeight = 60.0
@@ -126,6 +113,7 @@ class ChatViewController: UIViewController {
         let messageDictionary: [String: String] = [kCommunicationsMessageContentTerm: kCommunicationsEndConnectionTerm]
         let connectedPeers = model.curentBrowserModel.getPeersConnectedTo()
         
+        
         if model.curentBrowserModel.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
             
             //Give some time for connectedPeer to receive disconnect info
@@ -133,13 +121,36 @@ class ChatViewController: UIViewController {
                 self.model.curentBrowserModel.disconnect()
             })
             
-            self.dismiss(animated: true, completion: { () -> Void in
+            //Note: Anything called from MultiPeerConnectivity may happen on the background threead. Therefore all UI actions need to happen on the main thread. This can be done using OperationQueue.main.addOperation
+            OperationQueue.main.addOperation{ () -> Void in
+                self.dismiss(animated: true, completion: { () -> Void in
                 print("Disconneced from session")
-            })
+                })
+            }
             
         }else{
             print("Couldn't send diconnect, try again")
         }
+        
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        
+        guard let viewController = segue.destination as? ConnectedUsersViewController else {
+            return
+        }
+        
+        var connectedPeers = [String]()
+        //Get the display names for all of the connected users
+        for connectedPeerHash in self.model.curentBrowserModel.getPeersConnectedTo(){
+            
+            if let peerDisplayName = self.model.curentBrowserModel.getPeerDisplayName(connectedPeerHash){
+                
+                connectedPeers.append(peerDisplayName)
+            }
+        }
+        
+        viewController.connectedUsers = connectedPeers
         
     }
     
@@ -158,6 +169,8 @@ class ChatViewController: UIViewController {
     func checkIfLastConnection(){
         //If you are the last one in the Chat, leave this room for now
         if self.model.curentBrowserModel.getPeersConnectedTo().count < 2{
+            
+            //Note: Anything called from MultiPeerConnectivity may happen on the background threead. Therefore all UI actions need to happen on the main thread. This can be done using OperationQueue.main.addOperation
             OperationQueue.main.addOperation({ () -> Void in
                 self.dismiss(animated: true, completion: nil)
             })
@@ -285,61 +298,38 @@ extension ChatViewController: UITextFieldDelegate {
 // MARK: UITableView related method implementation
 extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
     
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
-        return 1
-    }
-
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
-        if tableView == chatTable{
-            return messagesToDisplay.count
-        }else{
-            return self.model.curentBrowserModel.getPeersConnectedTo().count
-        }
+        return messagesToDisplay.count
+        
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        if tableView == chatTable{
-            
-            let cell = tableView.dequeueReusableCell(withIdentifier: "idCell") as! ChatTableViewCell
-            
-            let message = messagesToDisplay[indexPath.row]
-            
-            var senderLabelText: String
-            var senderColor: UIColor
-            
-            if message.owner.uuid == model.curentBrowserModel.peerUUID{
-                senderLabelText = "I said"
-                senderColor = UIColor.purple
-            }else{
-                senderLabelText = message.owner.peerName + " said"
-                senderColor = UIColor.orange
-            }
-            
-            cell.timeLabel?.text = MPCChatUtility.getRelativeTime(message.createdAt!)
-            cell.nameLabel?.text = senderLabelText
-            cell.nameLabel?.textColor = senderColor
-            cell.messageLabel?.text = message.content
-            
-            //This is to see the messages from multiple peers in the console, currently there is a viewing issue when multiple peers are connected
-            print("Row \(indexPath.row) with message content '\(message.content)'")
-            
-            return cell
+        let cell = tableView.dequeueReusableCell(withIdentifier: "idCell") as! ChatTableViewCell
+        
+        let message = messagesToDisplay[indexPath.row]
+        
+        var senderLabelText: String
+        var senderColor: UIColor
+        
+        if message.owner.uuid == model.curentBrowserModel.peerUUID{
+            senderLabelText = "I said"
+            senderColor = UIColor.purple
         }else{
-            
-            let cell = tableView.dequeueReusableCell(withIdentifier: "idCellConnected")!
-            
-            cell.backgroundColor = UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
-            cell.alpha=0.5
-            
-            let connectedPeerHash = self.model.curentBrowserModel.getPeersConnectedTo()[indexPath.row]
-            
-            if let peerDisplayName = self.model.curentBrowserModel.getPeerDisplayName(connectedPeerHash){
-                cell.textLabel?.text = peerDisplayName
-            }
-            
-            return cell
+            senderLabelText = message.owner.peerName + " said"
+            senderColor = UIColor.orange
         }
+        
+        cell.timeLabel?.text = MPCChatUtility.getRelativeTime(message.createdAt!)
+        cell.nameLabel?.text = senderLabelText
+        cell.nameLabel?.textColor = senderColor
+        cell.messageLabel?.text = message.content
+        
+        //This is to see the messages from multiple peers in the console, currently there is a viewing issue when multiple peers are connected
+        print("Row \(indexPath.row) with message content '\(message.content)'")
+        
+        return cell
+        
     }
 }

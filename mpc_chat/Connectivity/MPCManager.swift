@@ -319,6 +319,7 @@ class MPCManager: NSObject {
 
 }
 
+// MARK: - MCSessionDelegate methods
 extension MPCManager: MCSessionDelegate {
     
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
@@ -361,14 +362,16 @@ extension MPCManager: MCSessionDelegate {
     //If you implement security, you will need to authenticate certificates here
     func session(_ session: MCSession, didReceiveCertificate certificate: [Any]?, fromPeer peerID: MCPeerID, certificateHandler: @escaping ((Bool) -> Void)) {
         
-        //DO NOT Remove this line. Ommitting will not allow MPC to connect
+        //DO NOT Remove this line. Ommitting will not allow MPC to connect. certificateHandler(true) accepts all connections without authenticating
         certificateHandler(true)
     }
     
 }
 
+
+// MARK: -    MCNearbyServiceBrowserDelegate methods
 extension MPCManager: MCNearbyServiceBrowserDelegate {
-    //Delagete methods
+    
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
         
         foundPeers[peerID.hash] = peerID
@@ -394,6 +397,8 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
 
 }
 
+
+// MARK: -   MCNearbyServiceAdvertiserDelegate methods
 extension MPCManager: MCNearbyServiceAdvertiserDelegate {
 
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping ((Bool, MCSession?) -> Void)) {
@@ -408,12 +413,12 @@ extension MPCManager: MCNearbyServiceAdvertiserDelegate {
         invitationDelegate?.invitationWasReceived(peerID.hash, additionalInfo: additionalInformation, completion: {
             (fromPeer, accept) -> Void in
             
-            if self.session.connectedPeers.count < kMCSessionMaximumNumberOfPeers{
+            if ((self.session.connectedPeers.count < kMCSessionMaximumNumberOfPeers) && accept){
                 
-                print("I'm accepting(\(accept)) \(fromPeer)'s invitation to connect to session \(String(describing: self.session))")
+                print("I'm accepting(\(accept)) \(peerID.displayName)'s invitation to connect to session \(self.session!)")
                 invitationHandler(accept, self.session)
             }else{
-                print("Warning: Not accepting invite from peer \(fromPeer) reached max session peers allowed(\(kMCSessionMaximumNumberOfPeers))")
+                print("Warning: Not accepting(\(accept)) invite from peer \(peerID.displayName). Currently connected peers (\(self.session.connectedPeers.count)) and max session peers allowed(\(kMCSessionMaximumNumberOfPeers))")
                 invitationHandler(false, self.session)
             }
         })

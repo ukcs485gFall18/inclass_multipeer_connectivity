@@ -21,6 +21,7 @@
 		91525BCE1CBC6900008C858E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 91525BCC1CBC6900008C858E /* Main.storyboard */; };
 		91714537218B781200D71EF1 /* Peer+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91714536218B781100D71EF1 /* Peer+CoreDataProperties.swift */; };
 		91714541218CAB1600D71EF1 /* BrowserModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91714540218CAB1600D71EF1 /* BrowserModel.swift */; };
+		91727AE923572A33001CF705 /* ConnectedUsersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91727AE823572A33001CF705 /* ConnectedUsersViewController.swift */; };
 		918A499D2179020B00B3DE31 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 918A499C2179020B00B3DE31 /* README.md */; };
 		918A49A421791F8D00B3DE31 /* mpc_chat.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 918A49A221791F8D00B3DE31 /* mpc_chat.xcdatamodeld */; };
 		91D3266521855037003C8096 /* MPCChatUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91D3266421855037003C8096 /* MPCChatUtility.swift */; };
@@ -49,6 +50,7 @@
 		91525BCD1CBC6900008C858E /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		91714536218B781100D71EF1 /* Peer+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Peer+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		91714540218CAB1600D71EF1 /* BrowserModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserModel.swift; sourceTree = "<group>"; };
+		91727AE823572A33001CF705 /* ConnectedUsersViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectedUsersViewController.swift; sourceTree = "<group>"; };
 		918A499C2179020B00B3DE31 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		918A49A321791F8D00B3DE31 /* mpc_chat.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = mpc_chat.xcdatamodel; sourceTree = "<group>"; };
 		91C042E61CD2D25600DF1BFD /* mpc_chat.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = mpc_chat.entitlements; sourceTree = "<group>"; };
@@ -135,6 +137,7 @@
 				9135EAB8218E2C1000E1D20C /* ChatModel.swift */,
 				91525BC31CBC6166008C858E /* ChatViewController.swift */,
 				91525BC21CBC6166008C858E /* ChatTableViewCell.swift */,
+				91727AE823572A33001CF705 /* ConnectedUsersViewController.swift */,
 				91525BC51CBC6166008C858E /* MPCChatConstants.swift */,
 				91D3266421855037003C8096 /* MPCChatUtility.swift */,
 				914D54372355F5F5007C00C2 /* Connectivity */,
@@ -238,6 +241,7 @@
 				B5FCA0102182611200263882 /* Peer+CoreDataClass.swift in Sources */,
 				91525BC81CBC6166008C858E /* BrowserViewController.swift in Sources */,
 				91525BCB1CBC6214008C858E /* MPCManager.swift in Sources */,
+				91727AE923572A33001CF705 /* ConnectedUsersViewController.swift in Sources */,
 				91525BC61CBC6166008C858E /* ChatTableViewCell.swift in Sources */,
 				91525BC71CBC6166008C858E /* ChatViewController.swift in Sources */,
 				91714537218B781200D71EF1 /* Peer+CoreDataProperties.swift in Sources */,

@@ -74,6 +74,10 @@ class ChatViewController: UIViewController {
         }
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+    }
+    
     func setConnectedPeersButton(){
         let numberOfConnectedPeers = self.model.curentBrowserModel.getPeersConnectedTo().count
         
@@ -139,7 +143,7 @@ class ChatViewController: UIViewController {
         guard let viewController = segue.destination as? ConnectedUsersViewController else {
             return
         }
-        
+                
         var connectedPeers = [String]()
         //Get the display names for all of the connected users
         for connectedPeerHash in self.model.curentBrowserModel.getPeersConnectedTo(){
@@ -151,7 +155,7 @@ class ChatViewController: UIViewController {
         }
         
         viewController.connectedUsers = connectedPeers
-        
+        viewController.delegate = self
     }
     
     //Reload the tableview data and scroll to the bottom using the main thread
@@ -332,4 +336,32 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
         return cell
         
     }
+}
+
+extension ChatViewController: ConnectedUsersViewControllerDelegate{
+    func dismissedView() {
+        
+        print(self.model.curentBrowserModel.getPeersConnectedTo().count)
+        
+        //Just incase we received a disconnection while another view is active. If no connections valid, need to head back to Browser
+        if self.model.curentBrowserModel.getPeersConnectedTo().count == 0{
+            
+            let alert = UIAlertController(title: "", message: "All peers have left the room", preferredStyle: UIAlertController.Style.alert)
+            
+            let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
+                
+                self.dismiss(animated: true, completion: { () -> Void in
+                    print("Disconneced from session while user was viewing Connected Users")
+                })
+            }
+            
+            alert.addAction(doneAction)
+
+            //Only present if this view if the main view
+            if self.view.superview != nil {
+                self.present(alert, animated: true, completion: nil)
+            }
+        }
+    }
+    
 }

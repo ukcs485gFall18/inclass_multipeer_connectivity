@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14868" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14868" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="cS1-j3-CxY">
     <device id="retina6_5" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
@@ -7,6 +7,22 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
+        <!--Navigation Controller-->
+        <scene sceneID="Leh-VA-khm">
+            <objects>
+                <navigationController id="cS1-j3-CxY" sceneMemberID="viewController">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="yM2-6R-VmU">
+                        <rect key="frame" x="0.0" y="44" width="414" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <connections>
+                        <segue destination="BYZ-38-t0r" kind="relationship" relationship="rootViewController" id="EJF-Fk-phg"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Y5U-Mi-Aqr" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-980" y="430"/>
+        </scene>
         <!--Browser View Controller-->
         <scene sceneID="tne-QT-ifu">
             <objects>
@@ -142,12 +158,13 @@
                         </variation>
                     </view>
                     <toolbarItems/>
+                    <navigationItem key="navigationItem" id="rcS-iY-BJ0"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
                         <outlet property="browserSegment" destination="aYI-UW-vHo" id="69r-J5-bWn"/>
                         <outlet property="tblPeers" destination="nDR-bP-Mt4" id="Oou-H0-EUM"/>
-                        <segue destination="vpC-FC-MdX" kind="presentation" identifier="idSegueChat" id="fVf-xH-pkt"/>
+                        <segue destination="vpC-FC-MdX" kind="presentation" identifier="idSegueChat" modalPresentationStyle="fullScreen" id="fVf-xH-pkt"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
@@ -163,16 +180,16 @@
                         <viewControllerLayoutGuide type="bottom" id="XZa-Eh-IEC"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="O24-t1-w15">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="842"/>
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="249" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="line" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="sJQ-gp-w8U">
-                                <rect key="frame" x="15" y="49" width="384" height="25"/>
+                                <rect key="frame" x="15" y="93" width="384" height="25"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits"/>
                             </textField>
                             <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="v3j-Nm-fKf">
-                                <rect key="frame" x="0.0" y="0.0" width="414" height="44"/>
+                                <rect key="frame" x="0.0" y="44" width="414" height="44"/>
                                 <items>
                                     <barButtonItem systemItem="stop" id="MAs-Gs-l90">
                                         <connections>
@@ -193,7 +210,7 @@
                                 </items>
                             </toolbar>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" translatesAutoresizingMaskIntoConstraints="NO" id="EPR-X0-cY4">
-                                <rect key="frame" x="0.0" y="77" width="414" height="685"/>
+                                <rect key="frame" x="0.0" y="121" width="414" height="695"/>
                                 <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <prototypes>
                                     <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="idCell" rowHeight="44" id="3e6-31-vtw" customClass="ChatTableViewCell" customModule="mpc_chat" customModuleProvider="target">
@@ -343,7 +360,7 @@
                                 </prototypes>
                             </tableView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="EzU-Rw-MIl">
-                                <rect key="frame" x="141" y="770" width="132" height="30"/>
+                                <rect key="frame" x="141" y="824" width="132" height="30"/>
                                 <state key="normal" title="0 Peers Connected"/>
                                 <connections>
                                     <action selector="connectedPeersButtonTapped:" destination="vpC-FC-MdX" eventType="touchUpInside" id="MSJ-RW-7mX"/>
@@ -430,10 +447,10 @@
             </objects>
             <point key="canvasLocation" x="1057.9710144927537" y="431.25"/>
         </scene>
-        <!--Connected Users-->
+        <!--Connected Users View Controller-->
         <scene sceneID="tRp-bL-XBI">
             <objects>
-                <viewController title="Connected Users" id="egx-XD-c3H" customClass="ConnectedUsersViewController" customModule="mpc_chat" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="egx-XD-c3H" customClass="ConnectedUsersViewController" customModule="mpc_chat" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="jna-fT-eY5"/>
                         <viewControllerLayoutGuide type="bottom" id="qN2-C3-GlZ"/>
@@ -442,8 +459,14 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="842"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Connected Users" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jKy-M1-d3g">
+                                <rect key="frame" x="116.66666666666669" y="40" width="181" height="29"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="24"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="prW-rL-rrp">
-                                <rect key="frame" x="20" y="78" width="374" height="722"/>
+                                <rect key="frame" x="20" y="106" width="374" height="694"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="idCellConnected" id="I7I-a9-ven">
@@ -460,19 +483,20 @@
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
                             <constraint firstItem="prW-rL-rrp" firstAttribute="leading" secondItem="EJk-6q-inA" secondAttribute="leading" constant="20" id="Dt5-5L-upo"/>
-                            <constraint firstItem="prW-rL-rrp" firstAttribute="top" secondItem="jna-fT-eY5" secondAttribute="bottom" constant="22" id="Izv-hg-Vrx"/>
+                            <constraint firstItem="prW-rL-rrp" firstAttribute="top" secondItem="jKy-M1-d3g" secondAttribute="bottom" constant="37" id="MMy-He-B2G"/>
                             <constraint firstAttribute="trailing" secondItem="prW-rL-rrp" secondAttribute="trailing" constant="20" id="SBB-mV-hFa"/>
+                            <constraint firstItem="jKy-M1-d3g" firstAttribute="top" secondItem="jna-fT-eY5" secondAttribute="bottom" constant="40" id="p33-sv-g9Q"/>
+                            <constraint firstItem="jKy-M1-d3g" firstAttribute="centerX" secondItem="EJk-6q-inA" secondAttribute="centerX" id="tsP-xN-4dG"/>
                             <constraint firstItem="qN2-C3-GlZ" firstAttribute="top" secondItem="prW-rL-rrp" secondAttribute="bottom" constant="8" id="vfS-ih-R5N"/>
                         </constraints>
                     </view>
-                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" barStyle="black"/>
                     <connections>
                         <outlet property="connectedUsersTableView" destination="prW-rL-rrp" id="YIf-wM-TPa"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Hke-cE-7Kw" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2037.68115942029" y="444.64285714285711"/>
+            <point key="canvasLocation" x="1963.7681159420292" y="430.58035714285711"/>
         </scene>
     </scenes>
 </document>

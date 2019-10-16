@@ -8,8 +8,13 @@
 
 import UIKit
 
+protocol  ConnectedUsersViewControllerDelegate{
+    func dismissedView()
+}
+
 class ConnectedUsersViewController: UIViewController {
     
+    var delegate:ConnectedUsersViewControllerDelegate?
     var connectedUsers = [String]()
     
     @IBOutlet weak var connectedUsersTableView: UITableView!
@@ -20,8 +25,15 @@ class ConnectedUsersViewController: UIViewController {
         // Do any additional setup after loading the view.
         connectedUsersTableView.delegate = self
         connectedUsersTableView.dataSource = self
+        
+        self.navigationItem.title = "test"
     }
     
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        
+        delegate?.dismissedView()
+    }
 
     /*
     // MARK: - Navigation

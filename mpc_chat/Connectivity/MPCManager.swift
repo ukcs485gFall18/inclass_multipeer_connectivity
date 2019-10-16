@@ -84,22 +84,10 @@ protocol MPCManagerMessageDelegate {
      
     */
     func peerDisconnected(_ peerHash: Int, peerName: String)
-    
-    /**
-     
-        If already connected with a peer, may need to know when an additional peer is added to the connection
-
-     - parameters:
-        - peerHash: The hash value for the peer that you are connected with
-        - peerName: The name of the peer you are conneced to
-     
-    */
-    //func connectedWithNewPeer(_ peerHash: Int, peerName: String)
 }
 
 class MPCManager: NSObject {
     
-    static var sharedMPCManager = CoreDataManager(databaseName: kCoreDataDBName, completionClosure: {})
     var managerDelegate:MPCManagerDelegate?
     var messageDelegate:MPCManagerMessageDelegate?
     var invitationDelegate:MPCManagerInvitationDelegate?
@@ -339,19 +327,14 @@ extension MPCManager: MCSessionDelegate {
         case .connected:
             print("Connected to \(peerID.displayName) with hash \(peerID.hash) in session \(session)")
             managerDelegate?.connectedWithPeer(peerID.hash, peerName: peerID.displayName)
-            //messageDelegate?.connectedWithNewPeer(peerID.hash, peerName: peerID.displayName)
             
         case .connecting:
             print("Connecting to \(peerID.displayName) with hash \(peerID.hash) in session \(session)")
             
-            
         case .notConnected:
             print("Not connected to \(peerID.displayName) with hash \(peerID.hash) in session  \(session)")
-            //OperationQueue.main.addOperation{ () -> Void in
-            
-                self.messageDelegate?.peerDisconnected(peerID.hash, peerName: peerID.displayName)
-             
-            //}
+            self.messageDelegate?.peerDisconnected(peerID.hash, peerName: peerID.displayName)
+    
         @unknown default:
             print("Hit MPCManager.MCSessionDelegate() hit an unknown state: \(state)")
         }

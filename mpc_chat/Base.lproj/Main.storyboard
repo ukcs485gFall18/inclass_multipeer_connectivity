@@ -417,10 +417,10 @@
                         </variation>
                     </view>
                     <connections>
+                        <outlet property="chatTable" destination="EPR-X0-cY4" id="1Qm-IV-duy"/>
+                        <outlet property="chatTextField" destination="sJQ-gp-w8U" id="n4b-46-0dR"/>
                         <outlet property="connectedPeersButton" destination="EzU-Rw-MIl" id="l1o-QY-CxD"/>
                         <outlet property="roomNameTextField" destination="sCz-Bb-QPy" id="GEo-jI-n3d"/>
-                        <outlet property="tblChat" destination="EPR-X0-cY4" id="blk-n2-nUR"/>
-                        <outlet property="txtChat" destination="sJQ-gp-w8U" id="NaN-MH-4Er"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="4o8-ud-Jw1" userLabel="First Responder" sceneMemberID="firstResponder"/>

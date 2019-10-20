@@ -21,7 +21,7 @@ class BrowserViewController: UIViewController {
     
     @IBAction func browserSegmentChanged(_ sender: Any) {
         
-        //HW3: Need to write code to handle when this segment changes. Descriptions are below
+        //MARK: - HW3: Need to write code to handle when this segment changes. Descriptions are below
         switch browserSegment.selectedSegmentIndex {
         case 0: //This is the original browser, already works correctly
             tblPeers.reloadData()
@@ -310,14 +310,14 @@ extension BrowserViewController: MPCManagerInvitationDelegate{
 // MARK: UITableView related method implementation
 extension BrowserViewController: UITableViewDelegate, UITableViewDataSource{
     
-    //HW3: Fix BrowserTable refreshing/reloading when MPC Manager refreshes and "Peers" is the segment selected
+    //MARK: - HW3: Fix BrowserTable refreshing/reloading when MPC Manager refreshes and "Peers" is the segment selected
     
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {
         return 1
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        //HW3: One of these need to be changed show correct table count based on the segment selection
+        //MARK: - HW3: One of these need to be changed show correct table count based on the segment selection
         switch browserSegment.selectedSegmentIndex {
         case 0:
             return model.getPeersFoundUUIDs.count

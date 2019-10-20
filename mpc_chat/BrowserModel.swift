@@ -195,7 +195,7 @@ class BrowserModel: NSObject{
                 return
             }
             
-            //HW3: Need to update the lastTimeConnected when an item is already saved to CoreData. Hint should use, "peer" above to make update
+            //MARK: - HW3: Need to update the lastTimeConnected when an item is already saved to CoreData. Hint should use, "peer" above to make update
             print("Found saved peer - \(peer.peerName), with uuid value - \(peerUUID). Updated lastSeen information")
             completion(peer)
             
@@ -251,7 +251,7 @@ class BrowserModel: NSObject{
             findRooms(self.thisPeer, withPeer: peer, completion: {
                 (roomsFound) -> Void in
                 
-                //HW3: How do you modify this to return all rooms found related to the users?
+                //MARK: - HW3: How do you modify this to return all rooms found related to the users?
                 guard let room = roomsFound?.first else{
                     completion(nil)
                     return
@@ -397,7 +397,7 @@ class BrowserModel: NSObject{
                 return
             }
             
-            oldRoom.name = roomName //HW3: Saves room name if sender has changed it. Fix this to check to make sure the person changing the room name is the owner
+            oldRoom.name = roomName //MARK: - HW3: Saves room name if sender has changed it. Fix this to check to make sure the person changing the room name is the owner
             oldRoom.addToPeers(self.thisPeer)
             
             BrowserModel.findPeers([ownerUUID], completion: {
@@ -489,7 +489,7 @@ class BrowserModel: NSObject{
 // MARK: - MPCManager delegate methods implementation
 extension BrowserModel: MPCManagerDelegate{
     
-    //HW3: Fix BrowserTable refreshing/reloading when MPC Manager refreshes and "Peers" is the segment selected
+    //MARK: - HW3: Fix BrowserTable refreshing/reloading when MPC Manager refreshes and "Peers" is the segment selected
     func foundPeer(_ peerHash: Int, withInfo: [String:String]?) {
         
         guard let uuid = withInfo?[kAdvertisingUUID] else{

@@ -23,11 +23,59 @@ class ChatViewController: UIViewController {
     @IBOutlet weak var chatTable: UITableView!
     @IBOutlet weak var connectedPeersButton: UIButton!
     
-    //HW3: Need to add a button the storyboard that when tapped, opens a subView or openning to BrowserViewController. Here the user keep see more peers around and add them to the chat. Note: Only owners should be able to add people to the Chat. If someone is not the owner, they can Browse, but tapping and adding a new user to the chat should be disabled
-    
+    // MARK: IBAction method implementation
     @IBAction func connectedPeersButtonTapped(_ sender: Any) {
         performSegue(withIdentifier: "goToConnectedUsers", sender: self)
     }
+    
+    @IBAction func userChangedRoomName(_ sender: Any) {
+        
+        //User changed room name
+        if roomNameTextField.text! != model.getRoomName(){
+            model.changeRoomName(roomNameTextField.text!)
+            
+            //MARK: - HW3: Need to send user a message (shouldn't show on their screen) with the new roomName. Remember, only the owner of a room should be able to change the name of the room. If a Peer is not the owner, the change label should be disabled
+        }
+    }
+    
+    
+    @IBAction func endChatTapped(_ sender: AnyObject) {
+    
+        let messageDictionary: [String: String] = [kCommunicationsMessageContentTerm: kCommunicationsEndConnectionTerm]
+        let connectedPeers = model.curentBrowserModel.getPeersConnectedTo()
+        
+        //Just incase no users are connected, but we are stuck here. If no connections valid, need to head back to Browser
+        if self.model.curentBrowserModel.getPeersConnectedTo().count == 0{
+            
+            self.dismiss(animated: true, completion: { () -> Void in
+                print("Disconneced from session because no users are connected")
+            })
+        }
+        
+        if model.curentBrowserModel.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
+            
+            //Give some time for connectedPeer to receive disconnect info and properly disconnect themselves
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1), execute: {
+                self.model.curentBrowserModel.disconnect()
+            })
+            
+            //Note: Anything called from MultiPeerConnectivity may happen on the background threead. Therefore all UI actions need to happen on the main thread. This can be done using OperationQueue.main.addOperation
+            OperationQueue.main.addOperation{ () -> Void in
+                self.dismiss(animated: true, completion: { () -> Void in
+                print("Disconneced from session")
+                })
+            }
+            
+        }else{
+            print("Couldn't send diconnect, try again")
+        }
+        
+    }
+    
+    @IBAction func addPeerButtonTapped(_ sender: Any) {
+        //MARK: - HW3: When this button is tapped it should segue (Present as popover) to a new BrowserViewController. In this new view the user can browse for more peers around them and add them to the chat. Note: Only owners should be able to add people to the Chat. If someone is not the owner, they can Browse, but tapping and adding a new user to the chat should be disabled. Hint: this should be similar to when "connectedPeersButtonTapped" is tapped
+    }
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -60,7 +108,7 @@ class ChatViewController: UIViewController {
         
         roomNameTextField.text = model.getRoomName()
         
-        //HW3: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
+        //MARK: - HW3: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
         roomNameTextField.isEnabled = true
         
         setConnectedPeersButton()
@@ -101,49 +149,7 @@ class ChatViewController: UIViewController {
     }
     
     
-    @IBAction func userChangedRoomName(_ sender: Any) {
-        
-        //User changed room name
-        if roomNameTextField.text! != model.getRoomName(){
-            model.changeRoomName(roomNameTextField.text!)
-            
-            //HW3: Need to send user a message (shouldn't show on their screen) with the new roomName. Remember, only the owner of a room should be able to change the name of the room. If a Peer is not the owner, the change label should be disabled
-        }
-    }
     
-    // MARK: IBAction method implementation
-    @IBAction func endChat(_ sender: AnyObject) {
-    
-        let messageDictionary: [String: String] = [kCommunicationsMessageContentTerm: kCommunicationsEndConnectionTerm]
-        let connectedPeers = model.curentBrowserModel.getPeersConnectedTo()
-        
-        //Just incase no users are connected, but we are stuck here. If no connections valid, need to head back to Browser
-        if self.model.curentBrowserModel.getPeersConnectedTo().count == 0{
-            
-            self.dismiss(animated: true, completion: { () -> Void in
-                print("Disconneced from session because no users are connected")
-            })
-        }
-        
-        if model.curentBrowserModel.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
-            
-            //Give some time for connectedPeer to receive disconnect info and properly disconnect themselves
-            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1), execute: {
-                self.model.curentBrowserModel.disconnect()
-            })
-            
-            //Note: Anything called from MultiPeerConnectivity may happen on the background threead. Therefore all UI actions need to happen on the main thread. This can be done using OperationQueue.main.addOperation
-            OperationQueue.main.addOperation{ () -> Void in
-                self.dismiss(animated: true, completion: { () -> Void in
-                print("Disconneced from session")
-                })
-            }
-            
-        }else{
-            print("Couldn't send diconnect, try again")
-        }
-        
-    }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         
@@ -274,7 +280,7 @@ extension ChatViewController: UITextFieldDelegate {
                 return
             }
             
-            //HW3: This is how you send a meesage. This is a hint for sending the newRoom name to the user. What if you send a similar message with kBrowserPeerRoomName in the key and the value of the newRoomName?
+            //MARK: - HW3: This is how you send a meesage. This is a hint for sending the newRoom name to the user. What if you send a similar message with kBrowserPeerRoomName in the key and the value of the newRoomName?
             let messageDictionary: [String: String] = [
                 kCommunicationsMessageContentTerm: textField.text!,
                 kCommunicationsMessageUUIDTerm: message.uuid

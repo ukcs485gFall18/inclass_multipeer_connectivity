@@ -43,5 +43,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Needs to use Bluetooth to send chat data. Only enabled when you are using the app</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>Needs to use Bluetooth to send chat data. Only enabled when you are using the app</string>
 </dict>
 </plist>

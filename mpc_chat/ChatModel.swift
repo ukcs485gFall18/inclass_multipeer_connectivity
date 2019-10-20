@@ -167,7 +167,7 @@ class ChatModel: NSObject{
     
     func changeRoomName(_ name:String) ->(){
         
-        //HW3: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
+        //MARK: - HW3: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
         let oldRoomName = thisRoom.name
         thisRoom.updated(name)
         
@@ -251,7 +251,7 @@ extension ChatModel: MPCManagerMessageDelegate {
             
             if success{
                 
-                //HW3: Need to update the lastTimeConnected when an item is already saved to CoreData. This is when you disconnected from the user. Hint: use peerHash to find peer.
+                //MARK: - HW3: Need to update the lastTimeConnected when an item is already saved to CoreData. This is when you disconnected from the user. Hint: use peerHash to find peer.
                 
                 OperationQueue.main.addOperation{ () -> Void in
                     
@@ -276,7 +276,7 @@ extension ChatModel: MPCManagerMessageDelegate {
         
         if message != kCommunicationsEndConnectionTerm  {
             
-            //HW3: Hint, this is checking for kCommunicationsMessageUUIDTerm, what if we checked for kBrowserPeerRoomName to detect a room name?
+            //MARK: - HW3: Hint, this is checking for kCommunicationsMessageUUIDTerm, what if we checked for kBrowserPeerRoomName to detect a room name?
             guard let uuid = dataDictionary[kCommunicationsMessageUUIDTerm] else{
                 print("Error: received messaged is lacking UUID")
                 return

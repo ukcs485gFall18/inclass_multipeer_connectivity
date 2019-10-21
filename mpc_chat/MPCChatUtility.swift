@@ -71,6 +71,7 @@ class MPCChatUtility {
     }
 }
 
+// MARK: - Extention for UIViewController to detect when a user cancels editing. To use, always call hideKeyboardWhenTappedAround() in viewDidLoad() of UIViewController to register the gesture so it can be detected
 // Source: https://stackoverflow.com/questions/24126678/close-ios-keyboard-by-touching-anywhere-using-swift
 extension UIViewController {
     
@@ -85,6 +86,7 @@ extension UIViewController {
     }
 }
 
+// MARK: - Extention for Date for getting relative date/time information
 //Source: Leo Dabus, http://stackoverflow.com/questions/27310883/swift-ios-doesrelativedateformatting-have-different-values-besides-today-and
 extension Date {
     func yearsFrom(_ date:Date)   -> Int {

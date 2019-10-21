@@ -42,21 +42,21 @@ class ChatViewController: UIViewController {
     @IBAction func endChatTapped(_ sender: AnyObject) {
     
         let messageDictionary: [String: String] = [kCommunicationsMessageContentTerm: kCommunicationsEndConnectionTerm]
-        let connectedPeers = model.curentBrowserModel.getPeersConnectedTo()
+        let connectedPeers = model.getPeersConnectedTo()
         
         //Just incase no users are connected, but we are stuck here. If no connections valid, need to head back to Browser
-        if self.model.curentBrowserModel.getPeersConnectedTo().count == 0{
+        if self.model.getPeersConnectedTo().count == 0{
             
             self.dismiss(animated: true, completion: { () -> Void in
                 print("Disconneced from session because no users are connected")
             })
         }
         
-        if model.curentBrowserModel.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
+        if model.sendData(data: messageDictionary, toPeers: connectedPeers){
             
             //Give some time for connectedPeer to receive disconnect info and properly disconnect themselves
             DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1), execute: {
-                self.model.curentBrowserModel.disconnect()
+                self.model.disconnect()
             })
             
             //Note: Anything called from MultiPeerConnectivity may happen on the background threead. Therefore all UI actions need to happen on the main thread. This can be done using OperationQueue.main.addOperation
@@ -127,7 +127,7 @@ class ChatViewController: UIViewController {
     }
     
     func setConnectedPeersButton(){
-        let numberOfConnectedPeers = self.model.curentBrowserModel.getPeersConnectedTo().count
+        let numberOfConnectedPeers = self.model.getPeersConnectedTo().count
         
         let stringToShow:String!
         
@@ -159,9 +159,9 @@ class ChatViewController: UIViewController {
                 
         var connectedPeers = [String]()
         //Get the display names for all of the connected users
-        for connectedPeerHash in self.model.curentBrowserModel.getPeersConnectedTo(){
+        for connectedPeerHash in self.model.getPeersConnectedTo(){
             
-            if let peerDisplayName = self.model.curentBrowserModel.getPeerDisplayName(connectedPeerHash){
+            if let peerDisplayName = self.model.getPeerDisplayName(connectedPeerHash){
                 
                 connectedPeers.append(peerDisplayName)
             }
@@ -185,7 +185,7 @@ class ChatViewController: UIViewController {
     
     func checkIfLastConnection(){
         //If you are the last one in the Chat, leave this room for now
-        if self.model.curentBrowserModel.getPeersConnectedTo().count < 2{
+        if self.model.getPeersConnectedTo().count < 2{
             
             //Note: Anything called from MultiPeerConnectivity may happen on the background threead. Therefore all UI actions need to happen on the main thread. This can be done using OperationQueue.main.addOperation
             OperationQueue.main.addOperation({ () -> Void in
@@ -204,7 +204,7 @@ class ChatViewController: UIViewController {
             return
         }
         
-        guard let peerAddedName = model.curentBrowserModel.getPeerDisplayName(peerAddedHash) else{
+        guard let peerAddedName = model.getPeerDisplayName(peerAddedHash) else{
             return
         }
         
@@ -273,7 +273,7 @@ extension ChatViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         
-        model.storeNewMessage(content: textField.text!, fromPeer: model.curentBrowserModel.peerUUID, completion: {
+        model.storeNewMessage(content: textField.text!, fromPeer: model.getPeerUUID(), completion: {
             (messageStored) -> Void in
             
             guard let message = messageStored else{
@@ -293,9 +293,9 @@ extension ChatViewController: UITextFieldDelegate {
             
             OperationQueue.main.addOperation{ () -> Void in
                 //MultipeerConnectivity is throwing a copy on main thread warning, which is why we are going to the main thread
-                let connectedPeers = self.model.curentBrowserModel.getPeersConnectedTo()
+                let connectedPeers = self.model.getPeersConnectedTo()
                 
-                if self.model.curentBrowserModel.sendData(dictionaryWithData: messageDictionary, toPeers: connectedPeers){
+                if self.model.sendData(data: messageDictionary, toPeers: connectedPeers){
                     print("Sent message \(message.content) to room \(roomName)")
                 }else{
                     print("Couldn't send message \(message.content) to room \(roomName)")
@@ -330,7 +330,7 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
         var senderLabelText: String
         var senderColor: UIColor
         
-        if message.owner.uuid == model.curentBrowserModel.peerUUID{
+        if message.owner.uuid == model.getPeerUUID(){
             senderLabelText = "I said"
             senderColor = UIColor.purple
         }else{
@@ -354,10 +354,10 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
 extension ChatViewController: ConnectedUsersViewControllerDelegate{
     func dismissedView() {
         
-        print(self.model.curentBrowserModel.getPeersConnectedTo().count)
+        print(self.model.getPeersConnectedTo().count)
         
         //Just incase we received a disconnection while another view is active. If no connections valid, need to head back to Browser
-        if self.model.curentBrowserModel.getPeersConnectedTo().count == 0{
+        if self.model.getPeersConnectedTo().count == 0{
             
             let alert = UIAlertController(title: "", message: "All peers have left the room", preferredStyle: UIAlertController.Style.alert)
             

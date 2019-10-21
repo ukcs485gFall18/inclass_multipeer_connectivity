@@ -25,13 +25,12 @@ class ConnectedUsersViewController: UIViewController {
         // Do any additional setup after loading the view.
         connectedUsersTableView.delegate = self
         connectedUsersTableView.dataSource = self
-        
-        self.navigationItem.title = "test"
     }
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         
+        //Notify the delegate that the user is no longer looking at the ConnectedUsersViewController
         delegate?.dismissedView()
     }
 

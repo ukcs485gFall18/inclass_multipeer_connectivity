@@ -17,8 +17,7 @@ class ChatModel: NSObject{
     fileprivate var peerHashUUID:[Int:String]!
     fileprivate var thisPeer:Peer!
     fileprivate var thisRoom:Room!
-    
-    var curentBrowserModel:BrowserModel!
+    fileprivate var curentBrowserModel:BrowserModel!
     
     var getPeer: Peer{
         get{
@@ -37,7 +36,7 @@ class ChatModel: NSObject{
         
         curentBrowserModel = browserModel
         
-        guard let roomToJoin = curentBrowserModel.roomToJoin else{
+        guard let roomToJoin = curentBrowserModel.roomPeerWantsToJoin else{
             fatalError("Error")
         }
         
@@ -86,6 +85,27 @@ class ChatModel: NSObject{
     
     //MARK: Public methods
 
+    
+    func getPeersConnectedTo()->[Int]{
+        return curentBrowserModel.getPeersConnectedTo()
+    }
+    
+    func sendData(data: [String:String], toPeers: [Int]) -> Bool {
+        return curentBrowserModel.sendData(dictionaryWithData: data, toPeers: toPeers)
+    }
+    
+    func disconnect(){
+        curentBrowserModel.disconnect()
+    }
+    
+    func getPeerUUID()->String{
+        return curentBrowserModel.getPeerUUID
+    }
+    
+    func getPeerDisplayName(_ peerHash: Int)-> String?{
+        return curentBrowserModel.getPeerDisplayName(peerHash)
+    }
+    
     func getAllMessagesInRoom(completion : (_ sortedMessages:[Message]?) -> ()){
         
         var messageUUIDs = [String]()

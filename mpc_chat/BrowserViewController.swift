@@ -115,7 +115,7 @@ class BrowserViewController: UIViewController {
                     let createOldRoomAction: UIAlertAction = UIAlertAction(title: actionTitle, style: UIAlertAction.Style.default) {
                         (alertAction) -> Void in
                         
-                        self.model.roomToJoin = room //Set the room to join to help preperation of segue
+                        self.model.roomPeerWantsToJoin = room //Set the room to join to help preperation of segue
                         
                         //Build invite information to send to user
                         let info = [
@@ -152,7 +152,7 @@ class BrowserViewController: UIViewController {
                         return
                     }
                     
-                    self.model.roomToJoin = room
+                    self.model.roomPeerWantsToJoin = room
                     
                     //Build invite information to send to user
                     let info = [
@@ -235,7 +235,7 @@ class BrowserViewController: UIViewController {
             //Prepare the upcoming view with all of the necessary info
             let viewController = segue.destination as! ChatViewController
             
-            guard let _ = model.roomToJoin else{
+            guard let _ = model.roomPeerWantsToJoin else{
                 fatalError("Never set the room for segue, should never happen")
             }
             
@@ -281,7 +281,7 @@ extension BrowserViewController: MPCManagerInvitationDelegate{
                 (roomFound) -> Void in
                 
                 if roomFound != nil{
-                    self.model.roomToJoin = roomFound!
+                    self.model.roomPeerWantsToJoin = roomFound!
                     completion(fromPeerHash, true)
                 }else{
                     print("Couldn't create room in CoreData")

@@ -12,16 +12,40 @@ import CoreData
 class BrowserModel: NSObject{
 
     fileprivate var mpcManager: MPCManager!
-    var peerUUID:String!
-    var peerDisplayName:String!
+    fileprivate var peerUUID:String!
+    fileprivate var peerDisplayName:String!
     fileprivate var peerUUIDHash = [String:Int]()
     fileprivate var peerHashUUID = [Int:String]()
     fileprivate let coreDataManager = CoreDataManager.sharedCoreDataManager
-    //fileprivate let appDelagate = UIApplication.shared.delegate as! AppDelegate
     fileprivate var thisPeer:Peer!
-    var roomToJoin:Room?
+    fileprivate var roomToJoin:Room?
 
     
+    var getPeerUUID:String{
+        get{
+            return peerUUID
+        }
+    }
+    
+    var roomPeerWantsToJoin:Room?{
+        get{
+            return roomToJoin
+        }
+        set{
+            roomToJoin = newValue
+        }
+    }
+    
+    /**
+        Sends the data to specific peers who you are connected to
+        
+        - parameters:
+            - dictionaryWithData: Data to send to peers
+            - toPeers: An array of peer hashes containing peers to send the data to
+     
+        - returns: If the data was properly sent or not
+     
+    */
     var getPeerUUIDHashDictionary:[String:Int]{
         get{
             return peerUUIDHash

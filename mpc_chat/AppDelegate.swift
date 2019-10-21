@@ -19,7 +19,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
     
-    fileprivate var coreDataManager: CoreDataManager!
+    //fileprivate var coreDataManager: CoreDataManager!
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -37,7 +37,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         
-        self.coreDataManager = CoreDataManager.sharedCoreDataManager
+        //self.coreDataManager = CoreDataManager.sharedCoreDataManager
         return true
     }
 

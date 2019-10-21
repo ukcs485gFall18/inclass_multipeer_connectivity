@@ -19,8 +19,7 @@ let kSegueGotoConnectedUsers                            = "goToConnectedUsers"
 
 // MARK: - Local notifications
 let kNotificationMPCIsInitialized                       = "mpcIsInitializedNotification"
-let kNotificationCoreDataInitialized                    = "coreDataInitializedNotification" //CoreData notifies appDelega
-let kNotificationCoreDataIsReady                        = "coreDataIsReadyNotification" //After setting CoreData flags, notifies everyone else
+let kNotificationCoreDataInitialized                    = "coreDataInitializedNotification" //Notify everyone waiting for CoreData to be initialized that it's ready
 let kNotificationBrowserUserTappedCell                  = "browserUserTappedCell"
 let kNotificationBrowserConnectedToFirstPeer            = "browserConnectedToFirstPeer"
 let kNotificationBrowserHasAddedUserToRoom              = "browserHasAddedUserToRoom"

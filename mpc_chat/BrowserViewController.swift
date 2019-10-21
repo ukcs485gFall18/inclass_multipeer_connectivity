@@ -202,7 +202,7 @@ class BrowserViewController: UIViewController {
         let actionSheet = UIAlertController(title: "", message: "Change Visibility", preferredStyle: UIAlertController.Style.actionSheet)
         
         var actionTitle: String
-        let isAdvertising = model.getIsAdvertising()
+        let isAdvertising = model.deviceIsAdvertising()
         
         if isAdvertising == true {
             actionTitle = "Make me invisible to others"

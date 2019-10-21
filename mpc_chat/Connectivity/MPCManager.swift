@@ -101,7 +101,7 @@ class MPCManager: NSObject {
     fileprivate var myAdvertisingName:String!
     fileprivate var myDiscoveryInfo:[String:String]?
     
-    var getIsAdvertising:Bool{
+    var deviceIsAdvertising:Bool{
         get {
             return isAdvertising
         }
@@ -139,7 +139,7 @@ class MPCManager: NSObject {
          */
         advertiser = MCNearbyServiceAdvertiser(peer: myPeer, discoveryInfo: myDiscoveryInfo, serviceType: myServiceType)
         advertiser.delegate = self
-        startAdvertising()
+        //startAdvertising()
         
         //Notify everyone MPC is up and running
         NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
@@ -149,13 +149,21 @@ class MPCManager: NSObject {
     //MARK: Public methods for managerDelegates
     
     func stopAdvertising(){
-        advertiser.stopAdvertisingPeer()
-        isAdvertising = false
+        
+        if isAdvertising{
+            advertiser.stopAdvertisingPeer()
+            isAdvertising = false
+        }
     }
     
     func startAdvertising(){
-        advertiser.startAdvertisingPeer()
-        isAdvertising = true
+        
+        if !isAdvertising{
+            print("Starting to advertise as '\(myPeer.displayName)' with additional info: \(String(describing: myDiscoveryInfo))")
+            advertiser.startAdvertisingPeer()
+            isAdvertising = true
+        }
+        
     }
     
     /**

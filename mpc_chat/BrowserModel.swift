@@ -170,6 +170,11 @@ class BrowserModel: NSObject{
         
         //If thisPeer was already set, there's no need to set it again
         if self.thisPeer != nil{
+            
+            if mpcManager != nil{
+                mpcManager.startAdvertising()
+            }
+        
             return
         }
         
@@ -188,6 +193,11 @@ class BrowserModel: NSObject{
             
             self.thisPeer = peer //Update myself with the stored value from CoreData
             print("Successfully saved my updated info to CoreData")
+            
+            if mpcManager != nil{
+                mpcManager.startAdvertising()
+            }
+            
         })
         
     }
@@ -325,8 +335,8 @@ class BrowserModel: NSObject{
         mpcManager.invitePeer(peerHash, additionalInfo: info)
     }
     
-    func getIsAdvertising()->Bool{
-        return mpcManager.getIsAdvertising
+    func deviceIsAdvertising()->Bool{
+        return mpcManager.deviceIsAdvertising
     }
     
     func stopAdvertising(){

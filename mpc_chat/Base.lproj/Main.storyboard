@@ -164,7 +164,7 @@
                     <connections>
                         <outlet property="browserSegment" destination="aYI-UW-vHo" id="69r-J5-bWn"/>
                         <outlet property="tblPeers" destination="nDR-bP-Mt4" id="Oou-H0-EUM"/>
-                        <segue destination="vpC-FC-MdX" kind="presentation" identifier="idSegueChat" modalPresentationStyle="fullScreen" id="fVf-xH-pkt"/>
+                        <segue destination="vpC-FC-MdX" kind="presentation" identifier="goToChat" modalPresentationStyle="fullScreen" id="fVf-xH-pkt"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>

@@ -11,22 +11,100 @@ import CoreData
 
 class BrowserModel: NSObject{
 
+    //MARK: Private variables
+    /**
+        All wireless connectivity for the application
+    */
     fileprivate var mpcManager: MPCManager!
-    fileprivate var peerUUID:String!
-    fileprivate var peerDisplayName:String!
-    fileprivate var peerUUIDHash = [String:Int]()
-    fileprivate var peerHashUUID = [Int:String]()
-    fileprivate let coreDataManager = CoreDataManager.sharedCoreDataManager
-    fileprivate var thisPeer:Peer!
-    fileprivate var roomToJoin:Room?
-
     
-    var getPeerUUID:String{
+    /**
+        the UUID of this particular peer
+    */
+    fileprivate var peerUUID:String!
+    
+    /**
+        the display name of this particular user
+    */
+    fileprivate var peerDisplayName:String!
+    
+    /**
+        A dictionary of all users found by the browser wirelessly. The keys are UUID's and the values are unique hash values for a particular device
+    */
+    fileprivate var peerUUIDHash = [String:Int]()
+    
+    /**
+        A dictionary of all users found by the browser wirelessly. The keys are hashes's of a particular device and the values are UUIDs for a particular user. Note that this is the reverse of peerUUIDHash. Both of these are kept for faster searching. If we didn't have both, and we wanted to find what hash value belonged to a particular UUID, we would have to search peerUUIDHash linearly using a for loop which can be slow if there are alot of users discovered in the browser.
+    */
+    fileprivate var peerHashUUID = [Int:String]()
+    
+    /**
+        This is a singleton to query anything we need from CoreData
+    */
+    fileprivate let coreDataManager = CoreDataManager.sharedCoreDataManager
+    
+    /**
+        The CoreData representaton of this particular entity
+    */
+    fileprivate var thisPeer:Peer!
+    
+    /**
+        The CoreData representaton of the room the user wants to join
+    */
+    fileprivate var roomToJoin:Room?
+    
+    //MARK: Public variables
+    
+    /**
+        Read-only value of the current users peerUUID. Note that peerUUID is private to this class and this is the only way to access it publicly. Read peerUUID for more info.
+    */
+    var thisUsersPeerUUID:String{
         get{
             return peerUUID
         }
     }
     
+    /**
+        Read-only value of the peerHashUUID dictionary. Note that peerHashUUID is private to this class and this is the only way to access it publicly. Read peerHashUUID for more info.
+    */
+    var getPeerHashUUIDDictionary:[Int:String]{
+        get{
+            return peerHashUUID
+        }
+    }
+    
+    /**
+        Read-only value of the peerUUIDHash dictionary. Note that peerUUIDHash is private to this class and this is the only way to access it publicly. Read peerUUIDHash for more info.
+    */
+    var getPeerUUIDHashDictionary:[String:Int]{
+        get{
+            return peerUUIDHash
+        }
+    }
+    
+    /**
+        Read-only value of the thisPeer dictionary. Note that thisPeer is private to this class and this is the only way to access it publicly. Read thisPeer for more info.
+    */
+    var getPeer: Peer{
+        get{
+            return thisPeer
+        }
+    }
+    
+    /**
+        Read-only value of the key values of the peerUUIDHash dictionary. Note that this is a computed value and this is the only way to access it publicly. Read peerUUIDHash for more info about it's key values.
+    */
+    var getPeersFoundUUIDs:[String]{
+        get{
+            return peerUUIDHash.keys.map({$0})
+        }
+    }
+    
+    /**
+        Read/Write the specific roomToJoin. Note that roomToJoin is private to this class and this is the only way to access it publicly
+
+        - returns: The name of the peer as a String
+     
+    */
     var roomPeerWantsToJoin:Room?{
         get{
             return roomToJoin
@@ -36,112 +114,114 @@ class BrowserModel: NSObject{
         }
     }
     
+    
     /**
-        Sends the data to specific peers who you are connected to
-        
-        - parameters:
-            - dictionaryWithData: Data to send to peers
-            - toPeers: An array of peer hashes containing peers to send the data to
-     
-        - returns: If the data was properly sent or not
+        Initializes a new BrowserModel to began wireless discovery and connectivity
      
     */
-    var getPeerUUIDHashDictionary:[String:Int]{
-        get{
-            return peerUUIDHash
-        }
-    }
-    
-    var getPeerHashUUIDDictionary:[Int:String]{
-        get{
-            return peerHashUUID
-        }
-    }
-    
-    var getPeer: Peer{
-        get{
-            return thisPeer
-        }
-    }
-    
-    var getPeersFoundUUIDs:[String]{
-        get{
-            return peerUUIDHash.keys.map({$0})
-        }
-    }
-    
     override init() {
         super.init()
         
-        NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationCoreDataIsReady), object: nil)
+        //The class needes to become an observer of CoreData to know when it's ready to read/write data. When CoreData is ready, handleCoreDataIsReady() will be called automatically because we are observing.
+        NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
+        
+        //The class needes to become an observer of the MPCManager to know when users are able to be browsed and connections are ready to be establisehd. When MPCManager is ready, handleCoreDataIsReady() will be called automatically because we are observing.
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
         
         peerDisplayName = MPCChatUtility.getDeviceName() //This is the display name for the device.
         
+        //This is a dictionary filled with advertisement information. This information is used to for other browsing users to know who you are
         guard let discovery = MPCChatUtility.buildAdvertisingDictionary() else{
             fatalError("Error in BroswerModel:init() couldn't buildAdvertisingDictionary")
         }
         
+        //This is the unique user identifier for this user (UUID)
         guard let uuid = discovery[kAdvertisingUUID] else {
             fatalError("Error in BroswerModel:init() couldn't find \(kAdvertisingUUID) in discovery info, only found \(discovery)")
         }
         
         peerUUID = uuid
         
+        //Instantiate the MPCManager so we can browse for users and create connections
         self.mpcManager = MPCManager(kAppName, advertisingName: peerDisplayName, discoveryInfo: discovery)
         
+        //Become a delegate of the MPCManager instance so we act when a users are found and invitations are receiced. See MPCManagerDelegate to see how we conform to the protocol
         mpcManager.managerDelegate = self
         
     }
     
     
-    //MARK: Private methods
+    //MARK: Private methods - these are used internally by the BrowserModel only
+    /**
+        Checks to see if CoreData is ready. If CoreData is ready, then the updated values of this user is stored. This is in case the user changes their displayName. If CoreData isn't ready, this method does nothing. This is called whenever the notification that references this method is fired.
+         - important:
+            - This method is made available to objective-c hence the @objc in front of it's declaration. This is required since part of the Notificaiton Center is still written on Objective-C. Swift will complain if this isn't there and will automatically add it back
+     
+        - parameters:
+            - notification: Has additional informaiton that was sent from the notifier
+     
+    */
     @objc fileprivate func handleCoreDataIsReady(_ notification: Notification){
         
+        //If CoreData isn't ready, we are not allowed to do anything with the database, doing so will crash the application
         if !coreDataManager.isCoreDataReady{
             return
         }
         
-        //If already set, no need to do again
+        //If thisPeer was already set, there's no need to set it again
         if self.thisPeer != nil{
             return
         }
         
+        //This is an example of how to create a tuple along with declaring two values at the same time. It's not really necessary here, but doing it as an ecxample
         let (myPeerUUID, myPeerName) = (peerUUID!, peerDisplayName!)
         
+        //Store this peer as a Peer entity in CoreData for later usage
         storeNewPeer(peerUUID: myPeerUUID, peerName: myPeerName, isConnectedToPeer: false, completion: {
             (storedPeer) -> Void in
             
+            //Try to unwrap storedPeer, this should unwrap if it was stored in CoreData properly
             guard let peer = storedPeer else{
-                print("Error in saving myself to CoreData")
+                print("Error in BrowswerModel().handleCoreDataIsReady(). Couldn't save myself as a Peer entity in CoreData")
                 return
             }
             
-            self.thisPeer = peer //Keep myself available for the life of the model
-            print("Saved my info to CoreData")
-            
+            self.thisPeer = peer //Update myself with the stored value from CoreData
+            print("Successfully saved my updated info to CoreData")
         })
         
     }
     
-    fileprivate func findRooms(_ owner: Peer, withPeer peer :Peer, completion : (_ roomsFound:[Room]?) -> ()){
+    /**
+        Queries CoreData for all stored rooms that are related to the Peer and withPeer. Asynchronously returns all rooms that were found
         
-        //Build query for this user as owner
+        - parameters:
+            - owner: The Peer who owns the rooms you are looking for
+            - withPeer: The other Peer who is in the room with the owner you are looking for
+            - roomsFound: An array of rooms found related to the owner and withPeer
+     
+    */
+    fileprivate func findRooms(_ owner: Peer, withPeer peer: Peer, completion : (_ roomsFound:[Room]?) -> ()){
+        
+        //Build query for this user as owner.
         var predicateArray = [NSPredicate]()
         predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [owner], peer))
         predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [peer], owner))
         
         let compoundQuery = NSCompoundPredicate(orPredicateWithSubpredicates: predicateArray)
         
+        //Create an array of rooms that currently contains 0 rooms
         var roomsToReturn = [Room]()
         
         coreDataManager.queryCoreDataRooms(compoundQuery, sortBy: kCoreDataRoomAttributeModifiedAt, inDescendingOrder: true, completion: {
             (roomsFound) -> Void in
             
+            //If rooms ware found, add them to the array of rooms created earlier
             if roomsFound != nil{
                 roomsToReturn.append(contentsOf: roomsFound!)
             }
             
+            //Asynchronously return the array of rooms found, even if none were found
             completion(roomsToReturn)
         })
     }
@@ -154,7 +234,7 @@ class BrowserModel: NSObject{
         coreDataManager.managedObjectContext.rollback()
     }
     
-    
+
     //MARK: Public methods
     func setMPCMessageManagerDelegate(_ toBecomeDelegate: MPCManagerMessageDelegate){
         mpcManager.messageDelegate = toBecomeDelegate

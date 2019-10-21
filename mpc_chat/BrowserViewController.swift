@@ -13,8 +13,8 @@ import UIKit
 
 class BrowserViewController: UIViewController {
     
-    let appDelagate = UIApplication.shared.delegate as! AppDelegate
-    let model = BrowserModel()
+    fileprivate let appDelagate = UIApplication.shared.delegate as! AppDelegate
+    fileprivate let model = BrowserModel()
     
     @IBOutlet weak var tblPeers: UITableView!
     @IBOutlet weak var browserSegment: UISegmentedControl!
@@ -39,7 +39,7 @@ class BrowserViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view
 
-        NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleScreenNeedsToBeRefreshed(_:)), name: Notification.Name(rawValue: kNotificationCoreDataIsReady), object: nil)
+        //NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleScreenNeedsToBeRefreshed(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleScreenNeedsToBeRefreshed(_:)), name: Notification.Name(rawValue: kNotificationBrowserScreenNeedsToBeRefreshed), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleSegueToChatRoom(_:)), name: Notification.Name(rawValue: kNotificationBrowserConnectedToFirstPeer), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleBrowserUserTappedCell(_:)), name: Notification.Name(rawValue: kNotificationBrowserUserTappedCell), object: nil)
@@ -240,7 +240,6 @@ class BrowserViewController: UIViewController {
             }
             
             viewController.model = ChatModel(browserModel: model)
-            //viewController.model = ChatModel(peer: model.getPeer, peerUUIDHashDictionary: model.getPeerUUIDHashDictionary, peerHashUUIDDictionary: model.getPeerHashUUIDDictionary, room: room)
             viewController.isConnected = true
         }
     }

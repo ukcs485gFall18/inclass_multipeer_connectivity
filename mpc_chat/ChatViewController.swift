@@ -12,11 +12,11 @@ import UIKit
 
 class ChatViewController: UIViewController {
     
-    let appDelegate = UIApplication.shared.delegate as! AppDelegate
-    var messagesToDisplay = [Message]()
+    fileprivate let appDelegate = UIApplication.shared.delegate as! AppDelegate
+    fileprivate var messagesToDisplay = [Message]()
+    fileprivate var connectedTableView:UITableView!
     var model = ChatModel() //This initialization is replaced by the BrowserView segue preperation
     var isConnected = false
-    var connectedTableView:UITableView!
 
     @IBOutlet weak var roomNameTextField: UITextField!
     @IBOutlet weak var chatTextField: UITextField!
@@ -25,7 +25,7 @@ class ChatViewController: UIViewController {
     
     // MARK: IBAction method implementation
     @IBAction func connectedPeersButtonTapped(_ sender: Any) {
-        performSegue(withIdentifier: "goToConnectedUsers", sender: self)
+        performSegue(withIdentifier: kSegueGotoConnectedUsers, sender: self)
     }
     
     @IBAction func userChangedRoomName(_ sender: Any) {
@@ -273,7 +273,7 @@ extension ChatViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         
-        model.storeNewMessage(content: textField.text!, fromPeer: model.getPeerUUID(), completion: {
+        model.storeNewMessage(content: textField.text!, fromPeer: model.thisUsersPeerUUID(), completion: {
             (messageStored) -> Void in
             
             guard let message = messageStored else{
@@ -330,7 +330,7 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
         var senderLabelText: String
         var senderColor: UIColor
         
-        if message.owner.uuid == model.getPeerUUID(){
+        if message.owner.uuid == model.thisUsersPeerUUID(){
             senderLabelText = "I said"
             senderColor = UIColor.purple
         }else{

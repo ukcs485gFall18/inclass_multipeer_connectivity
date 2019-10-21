@@ -74,7 +74,7 @@ class MPCChatUtility {
 // MARK: - Extention for UIViewController to detect when a user cancels editing. To use, always call hideKeyboardWhenTappedAround() in viewDidLoad() of UIViewController to register the gesture so it can be detected
 // Source: https://stackoverflow.com/questions/24126678/close-ios-keyboard-by-touching-anywhere-using-swift
 extension UIViewController {
-    
+        
     func hideKeyboardWhenTappedAround() {
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))
         tap.cancelsTouchesInView = false

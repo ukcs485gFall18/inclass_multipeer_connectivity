@@ -36,7 +36,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             UserDefaults.standard.synchronize()
         }
         
-        NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.handleCoreDataInitializedReceived(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
         
         self.coreDataManager = CoreDataManager.sharedCoreDataManager
         return true
@@ -62,12 +61,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationWillTerminate(_ application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
-    }
-
-    @objc func handleCoreDataInitializedReceived(_ notification: Notification) {
-        //Set flag
-        self.coreDataManager.setCoreDataAsReady()
-        NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationCoreDataIsReady), object: nil)
     }
 
 }

@@ -21,6 +21,15 @@ class CoreDataManager: NSObject {
         }
     }
     
+    /**
+        Queries CoreData for all stored rooms that are related to the Peer and withPeer. Asynchronously returns all rooms that were found
+        
+        - parameters:
+            - databaseName: The Peer who owns the rooms you are looking for
+            - withPeer: The other Peer who is in the room with the owner you are looking for
+            - roomsFound: An array of rooms found related to the owner and withPeer
+     
+    */
     init(databaseName: String, completionClosure: @escaping () -> ()) {
         
         // This resource is the same name as your xcdatamodeld contained in your project.
@@ -36,6 +45,7 @@ class CoreDataManager: NSObject {
         let psc = NSPersistentStoreCoordinator(managedObjectModel: mom)
         managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
         managedObjectContext.persistentStoreCoordinator = psc
+        super.init()
         
         DispatchQueue.global(qos: DispatchQoS.QoSClass.background).async {
             guard let docURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last else{
@@ -57,6 +67,7 @@ class CoreDataManager: NSObject {
                 //The callback block is expected to complete the User Interface and therefore should be presented back on the main queue so that the user interface does not need to be concerned with which queue this call is coming from.
                 DispatchQueue.main.sync(execute: {
                     print("CoreData initialized")
+                    self.isReady = true
                     NotificationCenter.default.post(name: NSNotification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
                     completionClosure()
                 })
@@ -74,21 +85,21 @@ class CoreDataManager: NSObject {
                 fatalError("Unresolved error \(wrappedError), \(wrappedError.userInfo)")
             }
         }
-        super.init()
     }
     
     deinit {
         _ = saveContext()
     }
     
-    @objc func handleCoreDataInitializedReceived(_ notification: Notification) {
-        isReady = true
-    }
-    
-    func setCoreDataAsReady()->(){
-        isReady = true
-    }
-    
+    /**
+        Queries CoreData for all stored rooms that are related to the Peer and withPeer. Asynchronously returns all rooms that were found
+        
+        - parameters:
+            - owner: The Peer who owns the rooms you are looking for
+            - withPeer: The other Peer who is in the room with the owner you are looking for
+            - roomsFound: An array of rooms found related to the owner and withPeer
+     
+    */
     func queryCoreDataPeers(_ queryCompoundPredicate : NSCompoundPredicate, sortBy: String?=nil, inDescendingOrder: Bool=true, completion: (_ returnObjects: [Peer]?) -> Void) {
        
         //Don't execute if not available

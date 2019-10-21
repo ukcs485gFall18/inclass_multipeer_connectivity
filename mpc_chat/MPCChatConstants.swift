@@ -14,7 +14,8 @@ let kAdvertisingUUID                                    = "uuid"
 let kDefaultsKeyFirstRun                                = "FirstRun"
 
 // MARK: - Segues
-let kSegueChat                                          = "idSegueChat"
+let kSegueChat                                          = "goToChat"
+let kSegueGotoConnectedUsers                            = "goToConnectedUsers"
 
 // MARK: - Local notifications
 let kNotificationMPCIsInitialized                       = "mpcIsInitializedNotification"

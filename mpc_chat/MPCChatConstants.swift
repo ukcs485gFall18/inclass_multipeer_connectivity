@@ -21,8 +21,8 @@ let kSegueGotoConnectedUsers                            = "goToConnectedUsers"
 let kNotificationMPCIsInitialized                       = "mpcIsInitializedNotification"
 let kNotificationCoreDataInitialized                    = "coreDataInitializedNotification" //Notify everyone waiting for CoreData to be initialized that it's ready
 let kNotificationBrowserUserTappedCell                  = "browserUserTappedCell"
-let kNotificationBrowserConnectedToFirstPeer            = "browserConnectedToFirstPeer"
 let kNotificationBrowserHasAddedUserToRoom              = "browserHasAddedUserToRoom"
+let kNotificationBrowserOtherPeerSentInvite             = "browserOthePeerSentInvite"
 let kNotificationBrowserScreenNeedsToBeRefreshed        = "browserScreenNeedsToBeRefreshed"
 let kNotificationChatRefreshRoom                        = "chatRefreshRoom"
 let kNotificationChatPeerWasLost                        = "chatPeerWasLost"
@@ -30,6 +30,7 @@ let kNotificationChatNewMessagePosted                   = "chatNewMessagePosted"
 
 
 // MARK: - Local notification keys
+let kNotificationBrowserInviteAlert                     = "browserInviteAlertKey"
 let kNotificationChatPeerHashKey                        = "chatPeerHashKey"
 let kNotificationChatPeerUUIDKey                        = "chatPeerUUIDKey"
 let kNotificationChatPeerNameKey                        = "chatPeerNameKey"
@@ -37,15 +38,17 @@ let kNotificationChatPeerMessageKey                     = "chatPeerMessageKey"
 
 
 // MARK: - SendReceive Dictionary terms
-let kCommunicationsMessageContentTerm                   = "message"
-let kCommunicationsMessageUUIDTerm                      = "uuid"
+let kCommunicationsMessageContentTerm                   = "communicationsMessage"
+let kCommunicationsMessageUUIDTerm                      = "communicationsUUID"
+let kCommunicationsRoomUUID                             = "communicationsRoomUUID"
+let kCommunicationsRoomName                             = "communicationsRoomName"
+let kCommunicationsRoomOwnerUUID                        = "communicationsRoomOwnerUUID"
 let kCommunicationsEndConnectionTerm                    = "_end_chat_"
 let kCommunicationsLostConnectionTerm                   = "_lost_connection_"
 
 // MARK: - Browser UI Dictionary terms
-let kBrowserPeerUUIDTerm                                = "peerUUID"
-let kBrowserPeerRoomUUID                                = "roomUUID"
-let kBrowserPeerRoomName                                = "roomName"
+let kBrowserCellPeerUUIDTerm                                = "peerUUID"
+
 
 // MARK: - CoreData
 let kCoreDataDBModel                                    = "mpc_chat"

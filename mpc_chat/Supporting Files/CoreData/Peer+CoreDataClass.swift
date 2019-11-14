@@ -13,14 +13,12 @@ import CoreData
 @objc(Peer)
 public class Peer: NSManagedObject {
     
-    fileprivate func created() -> () {
-        
-        //If a time was already created, never change it
-        if createdAt == nil{
-            createdAt = MPCChatUtility.getCurrentTime()
-            modifiedAt = createdAt!
-            lastSeen = createdAt!
-        }
+    override public func awakeFromInsert() {
+        super.awakeFromInsert()
+            
+        createdAt = MPCChatUtility.getCurrentTime()
+        modifiedAt = createdAt!
+        lastSeen = createdAt!
     }
     
     //Called everytime data is modified
@@ -32,7 +30,6 @@ public class Peer: NSManagedObject {
         self.uuid = peerUUID
         self.peerName = peerName
         
-        created()
         update(connected: connected)
     }
     

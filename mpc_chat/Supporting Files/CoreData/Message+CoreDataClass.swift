@@ -12,13 +12,13 @@ import CoreData
 
 @objc(Message)
 public class Message: NSManagedObject {
-    fileprivate func created() -> () {
+    
+    override public func awakeFromInsert() {
+        super.awakeFromInsert()
+            
+        createdAt = MPCChatUtility.getCurrentTime()
+        modifiedAt = createdAt!
         
-        //If a time was already created, never change it
-        if createdAt == nil{
-            createdAt = MPCChatUtility.getCurrentTime()
-            modifiedAt = createdAt!
-        }
     }
     
     //Called everytime data is modified
@@ -31,7 +31,7 @@ public class Message: NSManagedObject {
         self.owner = owner
         self.owner.addToMessages(self) //Owner always owns message
         
-        created()
+        //created()
         updated(withContent)
         
         guard let currentUUID = uuid else {

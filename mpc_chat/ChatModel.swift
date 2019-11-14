@@ -16,6 +16,7 @@ class ChatModel: NSObject{
     fileprivate var peerUUIDHash:[String:Int]!
     fileprivate var peerHashUUID:[Int:String]!
     fileprivate var thisPeer:Peer!
+    fileprivate var room:Room!
     fileprivate var currentBrowserModel:BrowserModel!
     
     var getPeer: Peer{
@@ -35,11 +36,11 @@ class ChatModel: NSObject{
         
         currentBrowserModel = browserModel
         
-        guard let _ = currentBrowserModel.roomPeerWantsToJoin else{
+        guard let roomToJoin = currentBrowserModel.roomPeerWantsToJoin else{
             fatalError("Error in ChatModel(browserModel: BrowserModel). Attempted to join a chat room, but the roomPeerWantsToJoin was never set.")
         }
         
-        //thisRoom = roomToJoin
+        room = roomToJoin
         thisPeer = currentBrowserModel.getPeer
         peerUUIDHash = currentBrowserModel.getPeerUUIDHashDictionary
         peerHashUUID = currentBrowserModel.getPeerHashUUIDDictionary
@@ -100,7 +101,7 @@ class ChatModel: NSObject{
         
         var messageUUIDs = [String]()
         
-        guard let messages = currentBrowserModel.roomPeerWantsToJoin?.messages else {
+        guard let messages = room.messages else {
             completion(nil)
             return
         }
@@ -154,7 +155,7 @@ class ChatModel: NSObject{
                 return
             }
             
-            if currentBrowserModel.roomPeerWantsToJoin!.peers.contains(peer){
+            if room.peers.contains(peer){
                 completion(true)
             }else{
                 completion(false)
@@ -172,17 +173,17 @@ class ChatModel: NSObject{
     }
     
     func getRoomName() -> String{
-        return currentBrowserModel.roomPeerWantsToJoin!.name
+        return room.name
     }
     
     func changeRoomName(_ name:String) ->(){
         
         //MARK: - HW3: Need to restrict room name changes to the owner ONLY. If a user is not the owner, they shouldn't be able to edit the room name
-        let oldRoomName = currentBrowserModel.roomPeerWantsToJoin!.name
-        currentBrowserModel.roomPeerWantsToJoin!.updated(name)
+        let oldRoomName = room.name
+        room.updated(name)
         
         if save(){
-            print("Successfully changed room name from \(oldRoomName) to \(currentBrowserModel.roomPeerWantsToJoin!.name)")
+            print("Successfully changed room name from \(oldRoomName) to \(room.name)")
         }else{
             print("Could not save changes of room name")
         }
@@ -201,8 +202,8 @@ class ChatModel: NSObject{
             let newMessage = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityMessage, into: coreDataManager.managedObjectContext) as! Message
             
             newMessage.createNew(uuid, withContent: content, owner: peer)
-            currentBrowserModel.roomPeerWantsToJoin!.addToMessages(newMessage)
-            currentBrowserModel.roomPeerWantsToJoin!.modified()
+            room.addToMessages(newMessage)
+            room.modified()
             if save(){
                 completion(newMessage)
             }else{
@@ -218,7 +219,7 @@ class ChatModel: NSObject{
     
     @objc func handleChatRoomHasBeenUpdated(_ notification: Notification) {
         
-        BrowserModel.findRooms([currentBrowserModel.roomPeerWantsToJoin!.uuid], completion: {
+        BrowserModel.findRooms([room.uuid], completion: {
             (roomsFound) -> Void in
             
             guard let newRoom = roomsFound?.first else{
@@ -226,7 +227,7 @@ class ChatModel: NSObject{
                 return
             }
             
-            currentBrowserModel.roomPeerWantsToJoin! = newRoom //Update to the latest version of room
+            room = newRoom //Update to the latest version of room
             
             guard let uuidOfPeerAddedToChat = notification.userInfo?[kNotificationChatPeerUUIDKey] as? String else{
                 print("Error in ChatModel.handleChatRoomHasBeenUpdated(). \(kNotificationChatPeerUUIDKey) was not found in notification dictionary")
@@ -257,14 +258,14 @@ extension ChatModel: MPCManagerMessageDelegate {
         
         //Check to see if this is a peer we were connected to
         lostPeer(peerHash, completion: {
-            (success) -> Void in
+            (wasPeerInThisRoom) -> Void in
             
-            if success{
+            if wasPeerInThisRoom{
                 
                 //MARK: - HW3: Need to update the lastTimeConnected when an item is already saved to CoreData. This is when you disconnected from the user. Hint: use peerHash to find peer.
                 
                 OperationQueue.main.addOperation{ () -> Void in
-                    
+                
                     //Notify ViewController the peer was lost. Notice how this needs to be called on the main thread
                     NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationChatPeerWasLost), object: self, userInfo: [kNotificationChatPeerNameKey: peerName])
                 }
@@ -286,7 +287,7 @@ extension ChatModel: MPCManagerMessageDelegate {
         
         if message != kCommunicationsEndConnectionTerm  {
             
-            //MARK: - HW3: Hint, this is checking for kCommunicationsMessageUUIDTerm, what if we checked for kBrowserPeerRoomName to detect a room name?
+            //MARK: - HW3: Hint, this is checking for kCommunicationsMessageUUIDTerm, what if we checked for kCommunicationsRoomName to detect a room name?
             guard let uuid = dataDictionary[kCommunicationsMessageUUIDTerm] else{
                 print("Error: received messaged is lacking UUID")
                 return

@@ -12,11 +12,12 @@ import UIKit
 
 class ChatViewController: UIViewController {
     
-    fileprivate let appDelegate = UIApplication.shared.delegate as! AppDelegate
     fileprivate var messagesToDisplay = [Message]()
     fileprivate var connectedTableView:UITableView!
-    var model = ChatModel() //This initialization is replaced by the BrowserView segue preperation
+    fileprivate var usersWhoTriedToConnect = [Int:String]()
+    var model = ChatModel() //This initialization is replaced by the BrowserViewController segue preperation
     var isConnected = false
+    
 
     @IBOutlet weak var roomNameTextField: UITextField!
     @IBOutlet weak var chatTextField: UITextField!
@@ -34,7 +35,7 @@ class ChatViewController: UIViewController {
         if roomNameTextField.text! != model.getRoomName(){
             model.changeRoomName(roomNameTextField.text!)
             
-            //MARK: - HW3: Need to send user a message (shouldn't show on their screen) with the new roomName. Remember, only the owner of a room should be able to change the name of the room. If a Peer is not the owner, the change label should be disabled
+            //MARK: - HW3: Need to send user a message using the model (shouldn't show on their screen) with the new roomName. Remember, only the owner of a room should be able to change the name of the room. If a Peer is not the owner, the change label should be disabled
         }
     }
     
@@ -46,7 +47,7 @@ class ChatViewController: UIViewController {
         
         //Just incase no users are connected, but we are stuck here. If no connections valid, need to head back to Browser
         if self.model.getPeersConnectedTo().count == 0{
-            
+            self.model.disconnect()
             self.dismiss(animated: true, completion: { () -> Void in
                 print("Disconneced from session because no users are connected")
             })
@@ -83,7 +84,7 @@ class ChatViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handlePeerAddedToRoom(_:)), name: Notification.Name(rawValue: kNotificationChatRefreshRoom), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handlePeerWasLost(_:)), name: Notification.Name(rawValue: kNotificationChatPeerWasLost), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleNewMessagePosted(_:)), name: Notification.Name(rawValue: kNotificationChatNewMessagePosted), object: nil)
-        
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handlePeerSentInvite(_:)), name: Notification.Name(rawValue: kNotificationBrowserOtherPeerSentInvite), object: nil)
         
         // Do any additional setup after loading the view.
         chatTable.delegate = self
@@ -185,11 +186,15 @@ class ChatViewController: UIViewController {
     
     func checkIfLastConnection(){
         //If you are the last one in the Chat, leave this room for now
-        if self.model.getPeersConnectedTo().count < 2{
+        if self.model.getPeersConnectedTo().count == 0{
+            
+            self.model.disconnect()
             
             //Note: Anything called from MultiPeerConnectivity may happen on the background threead. Therefore all UI actions need to happen on the main thread. This can be done using OperationQueue.main.addOperation
             OperationQueue.main.addOperation({ () -> Void in
-                self.dismiss(animated: true, completion: nil)
+                if self.view.window != nil {
+                    self.dismiss(animated: true, completion: nil)
+                }
             })
         }
     }
@@ -210,7 +215,7 @@ class ChatViewController: UIViewController {
         
         let alert = UIAlertController(title: "", message: "\(peerAddedName) has been added to the chat", preferredStyle: UIAlertController.Style.alert)
         
-        let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
+        let doneAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
             print("User tapped Okay")
         }
         
@@ -219,7 +224,7 @@ class ChatViewController: UIViewController {
         OperationQueue.main.addOperation({ () -> Void in
            
             //Only segue if this view if the main view
-            if self.view.superview != nil {
+            if self.view.window != nil {
                 self.present(alert, animated: true, completion: nil)
             }
         })
@@ -228,6 +233,7 @@ class ChatViewController: UIViewController {
     
     @objc func handleNewMessagePosted(_ notification: Notification) {
         
+        //Unrwrap the alert that was received
         guard let newMessage = notification.userInfo?[kNotificationChatPeerMessageKey] as? Message else{
             print("Error in ChatViewController.handleNewMessagePosted(). The key \(kNotificationChatPeerMessageKey) was not found in the notification")
             return
@@ -237,6 +243,17 @@ class ChatViewController: UIViewController {
         
         self.updateTableview()
         
+    }
+    
+    @objc func handlePeerSentInvite(_ notification: Notification) {
+        
+        //Unrwrap the alert that was received
+        guard let alert = notification.userInfo?[kNotificationBrowserInviteAlert] as? UIAlertController else{
+            print("Error in ChatViewController.handlePeerSentInvite(). The key \(kNotificationBrowserInviteAlert) was not found in the notification")
+            return
+        }
+        
+        self.present(alert, animated: true, completion: nil)
     }
     
     @objc func handlePeerWasLost(_ notification: Notification) {
@@ -251,7 +268,7 @@ class ChatViewController: UIViewController {
         
         let alert = UIAlertController(title: "", message: "\(peerName) left the chat", preferredStyle: UIAlertController.Style.alert)
         
-        let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
+        let doneAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
             
             self.checkIfLastConnection()
         }
@@ -261,7 +278,7 @@ class ChatViewController: UIViewController {
         OperationQueue.main.addOperation({ () -> Void in
            
             //Only segue if this view if the main view
-            if self.view.superview != nil {
+            if self.view.window != nil {
                 self.present(alert, animated: true, completion: nil)
             }
         })
@@ -280,7 +297,7 @@ extension ChatViewController: UITextFieldDelegate {
                 return
             }
             
-            //MARK: - HW3: This is how you send a meesage. This is a hint for sending the newRoom name to the user. What if you send a similar message with kBrowserPeerRoomName in the key and the value of the newRoomName?
+            //MARK: - HW3: This is how you send a meesage. This is a hint for sending the newRoom name to the user. What if you send a similar message with kCommunicationsRoomName in the key and the value of the newRoomName?
             let messageDictionary: [String: String] = [
                 kCommunicationsMessageContentTerm: textField.text!,
                 kCommunicationsMessageUUIDTerm: message.uuid
@@ -354,15 +371,13 @@ extension ChatViewController: UITableViewDelegate, UITableViewDataSource {
 extension ChatViewController: ConnectedUsersViewControllerDelegate{
     func dismissedView() {
         
-        print(self.model.getPeersConnectedTo().count)
-        
         //Just incase we received a disconnection while another view is active. If no connections valid, need to head back to Browser
         if self.model.getPeersConnectedTo().count == 0{
             
             let alert = UIAlertController(title: "", message: "All peers have left the room", preferredStyle: UIAlertController.Style.alert)
             
-            let doneAction: UIAlertAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-                
+            let doneAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
+                self.model.disconnect()
                 self.dismiss(animated: true, completion: { () -> Void in
                     print("Disconneced from session while user was viewing Connected Users")
                 })
@@ -371,10 +386,11 @@ extension ChatViewController: ConnectedUsersViewControllerDelegate{
             alert.addAction(doneAction)
 
             //Only present if this view if the main view
-            if self.view.superview != nil {
+            if self.view.window != nil {
                 self.present(alert, animated: true, completion: nil)
             }
         }
     }
     
 }
+

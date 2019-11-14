@@ -28,7 +28,7 @@ class BrowserTableViewCell: UITableViewCell {
 
         if isSelected{
             // Configure the view for the selected state
-            let info: [String:Any] = [kBrowserPeerUUIDTerm: peerUUID]
+            let info: [String:Any] = [kBrowserCellPeerUUIDTerm: peerUUID]
             let notification = Notification(name: .init(kNotificationBrowserUserTappedCell), object: info, userInfo: nil)
             
             NotificationCenter.default.post(notification)

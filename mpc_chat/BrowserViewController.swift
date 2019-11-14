@@ -13,8 +13,7 @@ import UIKit
 
 class BrowserViewController: UIViewController {
     
-    fileprivate let appDelagate = UIApplication.shared.delegate as! AppDelegate
-    fileprivate let model = BrowserModel()
+    var model = BrowserModel() //Hint: This initialization can be replaced by the ChatViewController segue preperation if you want to use it again
     
     @IBOutlet weak var tblPeers: UITableView!
     @IBOutlet weak var browserSegment: UISegmentedControl!
@@ -38,10 +37,8 @@ class BrowserViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view
-
-        //NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleScreenNeedsToBeRefreshed(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleScreenNeedsToBeRefreshed(_:)), name: Notification.Name(rawValue: kNotificationBrowserScreenNeedsToBeRefreshed), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleSegueToChatRoom(_:)), name: Notification.Name(rawValue: kNotificationBrowserConnectedToFirstPeer), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleSegueToChatRoom(_:)), name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleBrowserUserTappedCell(_:)), name: Notification.Name(rawValue: kNotificationBrowserUserTappedCell), object: nil)
         
         model.setMPCInvitationManagerDelegate(self)
@@ -69,7 +66,7 @@ class BrowserViewController: UIViewController {
         
         OperationQueue.main.addOperation{ () -> Void in
             //Only segue if this view if the main view
-            if self.view.superview != nil {
+            if self.view.window != nil {
                 self.performSegue(withIdentifier: kSegueChat, sender: self)
             }
         }
@@ -85,7 +82,7 @@ class BrowserViewController: UIViewController {
         // Note: use notification.object if you want to send any data with a posted Notification
         let receivedDataDictionary = notification.object as! [String: Any]
         
-        guard let peerUUID = receivedDataDictionary[kBrowserPeerUUIDTerm] as? String else{
+        guard let peerUUID = receivedDataDictionary[kBrowserCellPeerUUIDTerm] as? String else{
             print("Error in BrowserViewController.handleBrowserUserTappedCell(). peerUUID not found")
             return
         }
@@ -98,80 +95,69 @@ class BrowserViewController: UIViewController {
             return
         }
         
-        
-        
         model.findOldChatRooms(peerToJoinUUID: peerUUID, completion: {
             (oldRoomsFound)-> Void in
             
             var oldRoomActions = [UIAlertAction]()
             
             //Need too add all rooms, will limit to last 3 for readability
-            if oldRoomsFound != nil{
-                
-                for (index,room) in oldRoomsFound!.enumerated(){
+            for (index,roomInfo) in oldRoomsFound.enumerated() {
                     
-                    let actionTitle = "Join \(room.name)"
-                    
-                    let createOldRoomAction: UIAlertAction = UIAlertAction(title: actionTitle, style: UIAlertAction.Style.default) {
-                        (alertAction) -> Void in
-                        
-                        self.model.roomPeerWantsToJoin = room //Set the room to join to help preperation of segue
-                        
-                        //Build invite information to send to user
-                        let info = [
-                            kBrowserPeerRoomUUID: room.uuid,
-                            kBrowserPeerRoomName: room.name
-                        ]
-                        
-                        OperationQueue.main.addOperation{ () -> Void in
-                            //This method is used to send peer info they should used to connect
-                            self.model.invitePeer(peerHash, info: info)
-                        }
-                    }
-                    
-                    oldRoomActions.append(createOldRoomAction)
-                    
-                    //Limiting to first 3 for readability
-                    if index == 2{
-                        break
-                    }
-                }
-            }
-            
-            let roomName = "Chat w/ \(peerDisplayName)" //Probably want to come up with better default room name
-            
-            let actionSheet = UIAlertController(title: "", message: "Connect to \(peerDisplayName)", preferredStyle: UIAlertController.Style.actionSheet)
-            
-            let actionNewRoomTitle = "Create New \(roomName)"
-            let createNewRoomAction: UIAlertAction = UIAlertAction(title: actionNewRoomTitle, style: UIAlertAction.Style.default) { (alertAction) -> Void in
-                
-                self.model.createNewChatRoom(peerUUID, roomName: roomName, completion: {
-                    (createdRoom) -> Void in
-                    
-                    guard let room = createdRoom else{
+                let roomUUID = roomInfo.key
+                let additionalRoomInfo = roomInfo.value
+                guard let roomName = additionalRoomInfo[kCommunicationsRoomName],
+                    let roomOwnerUUID = additionalRoomInfo[kCommunicationsRoomOwnerUUID] else{
+                        print("Error in BrowserViewController.handleBrowserUserTappedCell(). Missing either \(kCommunicationsRoomName) or \(kCommunicationsRoomOwnerUUID) keys in \(additionalRoomInfo)")
                         return
-                    }
+                }
+                
+                let actionTitle = "Join \(roomName)"
                     
-                    self.model.roomPeerWantsToJoin = room
+                let createOldRoomAction = UIAlertAction(title: actionTitle, style: UIAlertAction.Style.default) {
+                    (alertAction) -> Void in
                     
                     //Build invite information to send to user
                     let info = [
-                        kBrowserPeerRoomUUID: room.uuid,
-                        kBrowserPeerRoomName: roomName
+                        kCommunicationsRoomUUID: roomUUID,
+                        kCommunicationsRoomName: roomName,
+                        kCommunicationsRoomOwnerUUID: roomOwnerUUID
                     ]
                     
                     OperationQueue.main.addOperation{ () -> Void in
                         //This method is used to send peer info they should used to connect
                         self.model.invitePeer(peerHash, info: info)
                     }
-                    
-                })
+                }
+                
+                oldRoomActions.append(createOldRoomAction)
+                
+                //Limiting to first 3 for readability
+                if index == 2{
+                    break
+                }
+            }
+        
+            let roomInfo = self.model.createTemporaryRoom(peerHash, peerDisplayName: peerDisplayName)
+            
+            guard let roomName = roomInfo[kCommunicationsRoomName] else{
+                print("Error in BrowserViewController. couldn't get room name")
+                return
+            }
+            
+            let actionNewRoomTitle = "Create New \(roomName)"
+            let createNewRoomAction = UIAlertAction(title: actionNewRoomTitle, style: UIAlertAction.Style.default) { (alertAction) -> Void in
+                
+                OperationQueue.main.addOperation{ () -> Void in
+                    //This method is used to send peer info they should used to connect
+                    self.model.invitePeer(peerHash, info: roomInfo)
+                }
             }
             
             let cancelAction = UIAlertAction(title: "Cancel", style: UIAlertAction.Style.cancel) { (alertAction) -> Void in
-                
+                self.model.clearRoomsRelatedToPeer()
             }
             
+            let actionSheet = UIAlertController(title: "", message: "Connect to \(peerDisplayName)", preferredStyle: UIAlertController.Style.actionSheet)
             actionSheet.addAction(createNewRoomAction)
             //Add all old actions before cancel
             for action in oldRoomActions{
@@ -181,6 +167,7 @@ class BrowserViewController: UIViewController {
             
             OperationQueue.main.addOperation{ () -> Void in
                 
+                //This is needed to work correctly work on iPads and larger screens
                 //Got popover code from https://medium.com/@nickmeehan/actionsheet-popover-on-ipad-in-swift-5768dfa82094
                 if let popoverController = actionSheet.popoverPresentationController{
                     
@@ -211,7 +198,7 @@ class BrowserViewController: UIViewController {
             actionTitle = "Make me visible to others"
         }
         
-        let visibilityAction: UIAlertAction = UIAlertAction(title: actionTitle, style: UIAlertAction.Style.default) { (alertAction) -> Void in
+        let visibilityAction = UIAlertAction(title: actionTitle, style: UIAlertAction.Style.default) { (alertAction) -> Void in
             if isAdvertising == true {
                 self.model.stopAdvertising()
             }else {
@@ -253,45 +240,64 @@ extension BrowserViewController: MPCManagerInvitationDelegate{
         
         //If the user is connected to anyone, deny all invitations received
         if model.getPeersConnectedTo().count > 0{
+            
+            guard let peerDisplayName = model.getPeerDisplayName(fromPeerHash) else{
+                print("Error in ChatViewController.invitationWasReceived(). Couldn't get displayName for \(fromPeerHash)")
+                completion(fromPeerHash, false)
+                return
+            }
+            
+            if model.hasThisPeerTriedToConnectBefore(peerHash: fromPeerHash, peerDisplayName: peerDisplayName){
+                //Do nothing and ignore the peer
+                completion(fromPeerHash, false)
+                return
+            }
+            
+            let alert = UIAlertController(title: "", message: "\(peerDisplayName) want's to join your chat. You will need to add them manually or exit this room if you want to chat with them", preferredStyle: UIAlertController.Style.alert)
+            
+            let doneAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
+                print("User tapped Okay")
+            }
+            
+            alert.addAction(doneAction)
+            
+            //Notice all UI calls need to be on the main thread
+            OperationQueue.main.addOperation{ () -> Void in
+                
+                //Only present this alert if this view is the main view
+                if self.view.window != nil{
+                    self.present(alert, animated: true, completion: nil)
+                }else{
+                    //Send notification that top view needs to display alert.
+                    NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserOtherPeerSentInvite), object: self, userInfo: [kNotificationBrowserInviteAlert:alert])
+                }
+            }
             completion(fromPeerHash, false)
         }
         
-        guard let roomUUID = additionalInfo[kBrowserPeerRoomUUID] as? String else{
-            return
-        }
-        
-        guard let roomName = additionalInfo[kBrowserPeerRoomName] as? String else {
-            return
-        }
-        
         guard let fromPeerName = model.getPeerDisplayName(fromPeerHash) else{
+            print("Error in BrowserViewController.invitationWasReceived(). Couldn't get displayName or UUID for \(fromPeerHash)")
             return
         }
         
-        guard let fromPeerUUID = model.getPeerUUIDFromHash(fromPeerHash) else{
+        guard let roomName = additionalInfo[kCommunicationsRoomName] as? String else{
+                print("Error in BrowserViewController.invitationWasReceived(). RoomName is missing from invite \(additionalInfo)")
             return
         }
         
         let alert = UIAlertController(title: "", message: "\(fromPeerName) wants you to join \(roomName).", preferredStyle: UIAlertController.Style.alert)
         
-        let acceptAction: UIAlertAction = UIAlertAction(title: "Accept", style: UIAlertAction.Style.default)  {(alertAction) -> Void in
+        let acceptAction = UIAlertAction(title: "Accept", style: UIAlertAction.Style.default)  {(alertAction) -> Void in
             
-            self.model.joinChatRoom(roomUUID, roomName: roomName, ownerUUID: fromPeerUUID, ownerName: fromPeerName, completion: {
-                (roomFound) -> Void in
+            self.model.joinChatRoom(fromPeerHash, roomInfo: additionalInfo, completion: {
+                (isReadyToJoin) -> Void in
                 
-                if roomFound != nil{
-                    self.model.roomPeerWantsToJoin = roomFound!
-                    completion(fromPeerHash, true)
-                }else{
-                    print("Couldn't create room in CoreData")
-                    completion(fromPeerHash, false)
-                }
-                
+                completion(fromPeerHash, isReadyToJoin)
             })
             
         }
         
-        let declineAction: UIAlertAction = UIAlertAction(title: "Cancel", style: UIAlertAction.Style.cancel) {(alertAction) -> Void in
+        let declineAction = UIAlertAction(title: "Cancel", style: UIAlertAction.Style.cancel) {(alertAction) -> Void in
             completion(fromPeerHash, false)
         }
         

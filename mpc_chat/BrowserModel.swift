@@ -52,6 +52,19 @@ class BrowserModel: NSObject{
     */
     fileprivate var roomToJoin:Room?
     
+    /**
+        Peers who have been invited that we are are waiting to hear back from
+    */
+    fileprivate var pendingInvitedPeers = [Int:[String:Any]]()
+    
+    
+    /**
+        Rooms that a we might want to ask a user to join
+    */
+    fileprivate var relatedRooms = [String:Room]()
+    
+    fileprivate var peersWhoTriedToConnect = [Int:String]()
+    
     //MARK: Public variables
     
     /**
@@ -59,7 +72,7 @@ class BrowserModel: NSObject{
     */
     var thisUsersPeerUUID:String{
         get{
-            return peerUUID
+            return thisPeer.uuid
         }
     }
     
@@ -121,14 +134,11 @@ class BrowserModel: NSObject{
     */
     override init() {
         super.init()
-        
-        //The class needes to become an observer of CoreData to know when it's ready to read/write data. When CoreData is ready, handleCoreDataIsReady() will be called automatically because we are observing.
-        NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
-        
-        //The class needes to become an observer of the MPCManager to know when users are able to be browsed and connections are ready to be establisehd. When MPCManager is ready, handleCoreDataIsReady() will be called automatically because we are observing.
-        NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
-        
-        peerDisplayName = MPCChatUtility.getDeviceName() //This is the display name for the device.
+                
+        //Just in case peerDisplayName hasn't been initialized yet. Sometimes this get's initialized early by CoreData
+        if peerDisplayName == nil{
+            peerDisplayName = MPCChatUtility.getDeviceName() //This is the display name for the device.
+        }
         
         //This is a dictionary filled with advertisement information. This information is used to for other browsing users to know who you are
         guard let discovery = MPCChatUtility.buildAdvertisingDictionary() else{
@@ -142,7 +152,13 @@ class BrowserModel: NSObject{
         
         peerUUID = uuid
         
+        //The class needes to become an observer of CoreData to know when it's ready to read/write data. When CoreData is ready, handleCoreDataIsReady() will be called automatically because we are observing.
+        NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
+        
+        //The class needes to become an observer of the MPCManager to know when users are able to be browsed and connections are ready to be establisehd. When MPCManager is ready, handleCoreDataIsReady() will be called automatically because we are observing.
+        NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
         //Instantiate the MPCManager so we can browse for users and create connections
+        
         self.mpcManager = MPCManager(kAppName, advertisingName: peerDisplayName, discoveryInfo: discovery)
         
         //Become a delegate of the MPCManager instance so we act when a users are found and invitations are receiced. See MPCManagerDelegate to see how we conform to the protocol
@@ -178,6 +194,11 @@ class BrowserModel: NSObject{
             return
         }
         
+        //Just in case peerDisplayName hasn't been initialized yet
+        if peerDisplayName == nil{
+            peerDisplayName = MPCChatUtility.getDeviceName() //This is the display name for the device.
+        }
+        
         //This is an example of how to create a tuple along with declaring two values at the same time. It's not really necessary here, but doing it as an ecxample
         let (myPeerUUID, myPeerName) = (peerUUID!, peerDisplayName!)
         
@@ -211,12 +232,17 @@ class BrowserModel: NSObject{
             - roomsFound: An array of rooms found related to the owner and withPeer
      
     */
-    fileprivate func findRooms(_ owner: Peer, withPeer peer: Peer, completion : (_ roomsFound:[Room]?) -> ()){
+    fileprivate func findRooms(_ owner: Peer, withPeer peer: Peer, withRoomUUID roomID: String?=nil, completion : (_ roomsFound:[Room]?) -> ()){
         
         //Build query for this user as owner.
+
         var predicateArray = [NSPredicate]()
         predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [owner], peer))
         predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [peer], owner))
+        
+        if roomID != nil{
+            predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeUUID) == %@", roomID!))
+        }
         
         let compoundQuery = NSCompoundPredicate(orPredicateWithSubpredicates: predicateArray)
         
@@ -267,6 +293,8 @@ class BrowserModel: NSObject{
     }
     
     func disconnect(){
+        roomToJoin = nil
+        peersWhoTriedToConnect.removeAll()
         mpcManager.disconnect()
     }
     
@@ -331,8 +359,14 @@ class BrowserModel: NSObject{
     }
     
     
-    func invitePeer(_ peerHash: Int, info: [String:Any]?){
+    func invitePeer(_ peerHash: Int, info: [String:Any]){
+        
+        pendingInvitedPeers[peerHash] = info
         mpcManager.invitePeer(peerHash, additionalInfo: info)
+    }
+    
+    func clearRoomsRelatedToPeer(){
+        relatedRooms.removeAll()
     }
     
     func deviceIsAdvertising()->Bool{
@@ -351,43 +385,203 @@ class BrowserModel: NSObject{
         return mpcManager.getPeersConnectedTo()
     }
     
-    func findOldChatRooms(peerToJoinUUID: String, completion : (_ room:[Room]?) -> ()){
+    fileprivate func whatTypeOfPeerIsDevice(_ ownerUUID: String?=nil, peerToJoinUUID: String?=nil)->(owner:Peer?, peerToJoin:Peer?, uuidToSearch: String?){
         
-        BrowserModel.findPeers([peerToJoinUUID], completion: {
+        //Check if this method was used correctly
+        if ownerUUID == nil && peerToJoinUUID == nil{
+            print("Error in BrowserModel.whatTypeOfPeerIsDevice(). Both ownerUUID and peerToJoinUUID can't be nil. Only set the one to nil that belongs to this specific device")
+            return (nil,nil,nil)
+        }
+        
+        var owner:Peer? = nil
+        var peerToJoin:Peer? = nil
+        var peerToSearchUUID:String? = nil
+        
+        //Check to see if this peer is the owner or a member in the room. Note the if statement at the top of the method confirms that both can't be nil
+        if ownerUUID == nil {
+            owner = self.thisPeer
+            peerToSearchUUID = peerToJoinUUID!
+        } else if peerToJoinUUID == nil{
+            peerToJoin = self.thisPeer
+            peerToSearchUUID = ownerUUID!
+        } else if ownerUUID! == self.thisPeer.uuid{
+            //This means the user provided both UUID's, so we can unwrap it. One of these should be the owner
+            owner = self.thisPeer
+            peerToSearchUUID = peerToJoinUUID!
+        } else if peerToJoinUUID! == self.thisPeer.uuid{
+            //This means the user provided both UUID's, , so we can unwrap it, One of these should be the owner
+            peerToJoin = self.thisPeer
+            peerToSearchUUID = ownerUUID!
+        } else{
+            print("Error in BrowserModel.whatTypeOfPeerIsDevice(). None of the UUID's passed to this method belong to this device, ignoring...")
+        }
+        
+        return (owner,peerToJoin,peerToSearchUUID)
+        
+    }
+    
+    func findOldChatRooms(_ ownerUUID: String?=nil, peerToJoinUUID: String?=nil, roomUUID: String?=nil, completion : (_ roomInformation:[String:[String:String]]) -> ()){
+        
+        //Build invite information to send to user
+        var roomInfo = [String:[String:String]]()
+        
+        var (owner,peerToJoin,peerToSearchUUID) = whatTypeOfPeerIsDevice(ownerUUID, peerToJoinUUID: peerToJoinUUID)
+        
+        //Check if this method was used correctly
+        if owner == nil && peerToJoin == nil && peerToSearchUUID == nil{
+            print("Error in BrowserModel.findOldChatRooms(). Both owner and peerToJoin can't be nil. Only set the one to nil that belongs to this specific device")
+            completion(roomInfo)
+            return
+        }
+        
+        BrowserModel.findPeers([peerToSearchUUID!], completion: {
             (peersFound) -> Void in
-            
-            guard let peer = peersFound?.first else{
-                discard()
-                completion(nil)
+
+            guard let peerFound = peersFound?.first else{
+                completion(roomInfo)
                 return
             }
-            
-            findRooms(self.thisPeer, withPeer: peer, completion: {
+                           
+            //If a previous CoreData Peer entity wasn't set, the peerFound belongs to that entity
+            if owner == nil{
+                owner = peerFound
+            }else{
+                peerToJoin = peerFound
+            }
+
+            //If we made it this far, the owner and Peer have succesfully been set, so it's safe to unwrap both of them and search for the rooms they belong to.
+            findRooms(owner!, withPeer: peerToJoin!, withRoomUUID: roomUUID, completion: {
                 (roomsFound) -> Void in
                 
                 //MARK: - HW3: How do you modify this to return all rooms found related to the users?
-                guard let room = roomsFound?.first else{
-                    completion(nil)
+                guard let rooms = roomsFound else{
+                    completion(roomInfo)
                     return
                 }
                 
-                completion([room])
+                for room in rooms{
+                    roomInfo[room.uuid] = [
+                        kCommunicationsRoomName: room.name,
+                        kCommunicationsRoomOwnerUUID: room.owner.uuid
+                    ]
+                    relatedRooms[room.uuid] = room
+                }
+            
+                completion(roomInfo)
                 
             })
         })
+        
     }
     
-    func createNewChatRoom(_ peerToJoinUUID: String, roomName: String, completion : (_ room:Room?) -> ()){
+    func createTemporaryRoom(_ peerHash: Int, peerDisplayName:String?=nil, uuidOfRoom: String?=nil, nameOfRoom:String?=nil, ownerOfRoomUUID:String?=nil)->[String:String]{
+        
+        let roomUUID:String
+        if uuidOfRoom != nil{
+            roomUUID = uuidOfRoom!
+        }else{
+            roomUUID = UUID.init().uuidString
+        }
+        
+        let roomName:String
+        if nameOfRoom != nil{
+            roomName = nameOfRoom!
+        }else if peerDisplayName != nil{
+            roomName = "Chat w/ \(peerDisplayName!)" //Probably want to come up with better default room name
+        }else{
+            roomName = "None"
+        }
+        
+        let ownerUUID:String
+        if ownerOfRoomUUID != nil{
+            ownerUUID = ownerOfRoomUUID!
+        }else{
+            ownerUUID = self.thisPeer.uuid
+        }
+            
+    
+        //Build invite information to send to user
+        let temporaryRoomInfo = [
+            kCommunicationsRoomUUID: roomUUID,
+            kCommunicationsRoomName: roomName,
+            kCommunicationsRoomOwnerUUID: ownerUUID
+        ]
+        
+        self.pendingInvitedPeers[peerHash] = temporaryRoomInfo
+        
+        return temporaryRoomInfo
+        
+    }
+    
+    func wantPeerToJoinRoom(_ peerHash:Int, completion : (_ room:Room?) -> ()){
+        
+        guard let roomInfo = pendingInvitedPeers[peerHash],
+            let roomUUID = roomInfo[kCommunicationsRoomUUID] as? String,
+            let roomName = roomInfo[kCommunicationsRoomName] as? String,
+            let roomOwnerUUID = roomInfo[kCommunicationsRoomOwnerUUID] as? String else{
+                
+            print("Error in BrowserModel.wantPeerToJoinRoom(). the roomInfo for \(peerHash) wasn't found in \(pendingInvitedPeers)")
+            completion(nil)
+            return
+        }
+        
+        guard let potentialRoom = relatedRooms[roomUUID] else{
+            
+            guard let otherPeerUUID = self.getPeerUUIDFromHash(peerHash) else{
+                print("Error in BrowserModel.wantPeerToJoinRoom() couldn't find UUID for hash \(peerHash)")
+                return
+            }
+            
+            let peerToJoinChatUUID:String
+           
+            if roomOwnerUUID != self.thisPeer.uuid {
+                peerToJoinChatUUID = self.thisPeer.uuid
+            }else{
+                peerToJoinChatUUID = otherPeerUUID
+            }
+            
+            //If a room isn't found above, a new room must be created
+            createNewChatRoom(roomOwnerUUID, peerUUID: peerToJoinChatUUID, roomUUID: roomUUID, roomName: roomName, completion: {
+            (createdRoom) -> Void in
+            
+                guard let room = createdRoom else{
+                    completion(nil)
+                    return
+                }
+            
+                completion(room)
+                return
+            })
+            
+            return
+        }
+        
+        completion(potentialRoom)
+        
+    }
+    
+    func createNewChatRoom(_ owner: String, peerUUID: String, roomUUID:String?=nil, roomName: String, completion : (_ room:Room?) -> ()){
+        
+        var (owner, peerToJoin, peerUUIDToSearch) = whatTypeOfPeerIsDevice(owner, peerToJoinUUID: peerUUID)
+        
+        //Check if this method was used correctly
+        if owner == nil && peerToJoin == nil && peerUUIDToSearch == nil{
+            print("Error in BrowserModel.createNewChatRoom(). Both owner and peerToJoin can't be nil. Only set the one to nil that belongs to this specific device")
+            completion(nil)
+            return
+        }
         
         let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: coreDataManager.managedObjectContext) as! Room
         
-        BrowserModel.findPeers([peerToJoinUUID], completion: {
+        BrowserModel.findPeers([peerUUIDToSearch!], completion: {
             (peersFound) -> Void in
             
-            guard let peer = peersFound?.first else{
+            guard let peerFound = peersFound?.first else{
                 
-                //The peer we are trying to add isn't in CoreData
-                guard let peerHash = peerUUIDHash[peerToJoinUUID] else{
+                //We entered in this statement if the peer we are trying to add isn't in CoreData, so we need to add them to CoreData first
+                
+                //Get the hash value for the current peer
+                guard let peerHash = peerUUIDHash[peerUUIDToSearch!] else{
                     discard()
                     completion(nil)
                     return
@@ -398,24 +592,31 @@ class BrowserModel: NSObject{
                     completion(nil)
                     return
                 }
-                //Store this peer
-                storeNewPeer(peerUUID: peerToJoinUUID, peerName: peerName, isConnectedToPeer: false, completion: {
+                
+                //Store this peer in CoreData
+                storeNewPeer(peerUUID: peerUUID, peerName: peerName, isConnectedToPeer: false, completion: {
                     (storedPeer) -> Void in
                     
-                    guard let peer = storedPeer else{
+                    guard let peerFound = storedPeer else{
                         discard()
                         completion(nil)
                         return
                     }
                     
-                    newRoom.createNew(roomName: roomName, owner: self.thisPeer)
-                    newRoom.addToPeers(self.thisPeer)
-                    newRoom.addToPeers(peer)
+                    //If a previous CoreData Peer entity wasn't set, the peerFound belongs to that entity
+                    if owner == nil{
+                        owner = peerFound
+                    }else{
+                        peerToJoin = peerFound
+                    }
+                    
+                    newRoom.createNew(roomUUID, roomName: roomName, owner: owner!)
+                    newRoom.addToPeers(Set([owner!, peerToJoin!]))
                     
                     if save(){
                         completion(newRoom)
                     }else{
-                        print("Could not save newEntity for Room - \(roomName), with owner - \(self.thisPeer.uuid)")
+                        print("Could not save newEntity for Room - \(roomName), with owner - \(owner!.uuid)")
                         discard()
                         completion(nil)
                     }
@@ -423,9 +624,16 @@ class BrowserModel: NSObject{
                 return
             }
             
+            //If a previous CoreData Peer entity wasn't set, the peerFound belongs to that entity
+            if owner == nil{
+                owner = peerFound
+            }else{
+                peerToJoin = peerFound
+            }
+            
             //Found all the peers needed, can save and move on
-            newRoom.createNew(roomName: roomName, owner: self.thisPeer)
-            newRoom.addToPeers(Set([self.thisPeer,peer]))
+            newRoom.createNew(roomUUID, roomName: roomName, owner: owner!)
+            newRoom.addToPeers(Set([owner!, peerToJoin!]))
             
             if save(){
                 completion(newRoom)
@@ -438,108 +646,81 @@ class BrowserModel: NSObject{
         })
     }
     
-    func joinChatRoom(_ roomUUID: String, roomName: String, ownerUUID: String, ownerName: String, completion : (_ rooms:Room?) -> ()){
+    func hasThisPeerTriedToConnectBefore(peerHash: Int, peerDisplayName: String)->Bool{
+        //If this user has already tried to connect before, ignore them...
+        if peersWhoTriedToConnect[peerHash] != nil{
+            return true
+        }else{
+            //Store this peer temporalily just incase they keep bothering you. They can only alert you once
+            self.peersWhoTriedToConnect[peerHash] = peerDisplayName
+            return false
+        }
+        
+    }
+    
+    func joinChatRoom(_ fromPeerHash:Int, roomInfo: [String:Any], completion : (_ okToJoin:Bool) -> ()){
+        
+        guard let roomUUID = roomInfo[kCommunicationsRoomUUID] as? String,
+            let roomName = roomInfo[kCommunicationsRoomName] as? String,
+            let roomOwnerUUID = roomInfo[kCommunicationsRoomOwnerUUID] as? String else{
+                print("Error in BrowserModel.joinChatRoom(). RoomUUID, RoomName, or RoomOwnerUUID is missing from invite \(roomInfo)")
+            return
+        }
         
         BrowserModel.findRooms([roomUUID], completion: {
             
             (roomsFound) -> Void in
             
-            guard let rooms = roomsFound else{
-                completion(nil)
+            //There should only be one room found for this roomUUID since roomUUIDs are unique
+            guard let oldRoom = roomsFound?.first else{
+                
+                _ = createTemporaryRoom(fromPeerHash, uuidOfRoom: roomUUID, nameOfRoom: roomName, ownerOfRoomUUID: roomOwnerUUID)
+                
+                completion(true)
                 return
             }
             
-            guard let oldRoom = rooms.first else{
-                
-                //If no room found, create a new room with the received roomUUID
-                let newRoom = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityRoom, into: coreDataManager.managedObjectContext) as! Room
-                newRoom.addToPeers(self.thisPeer)
-                
-                //Get the owner as a Peer
-                BrowserModel.findPeers([ownerUUID], completion: {
-                    (peersFound) -> Void in
-                    
-                    
-                    //Build dictionary of user information to send
-                    let notificationInfo = [
-                        kNotificationChatPeerUUIDKey: ownerUUID
-                    ]
-                        
-                    guard let peer = peersFound?.first else{
-                        //If this owner has never been saved before, need to save
-                        let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: coreDataManager.managedObjectContext) as! Peer
-                        
-                        newPeer.createNew(ownerUUID, peerName: ownerName, connected: false)
-                        newRoom.createNew(roomUUID, roomName: roomName, owner: newPeer)
-                        newRoom.addToPeers(newPeer)
-                        newRoom.addToPeers(self.thisPeer)
-                        
-                        if save(){
-                            
-                            OperationQueue.main.addOperation{ () -> Void in
-                                //Send notification that room has changed. This is needed for cases when the BrowserModel is used to add additional users to a room
-                                NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: self, userInfo: notificationInfo)
-                            }
-                            
-                            completion(newRoom)
-                        }else{
-                            print("Could not save newEntity for Room - \(roomName), with owner - \(ownerUUID)")
-                            discard()
-                            completion(nil)
-                        }
+            oldRoom.name = roomName //MARK: - HW3: Saves room name if sender has changed it. Fix this to check to make sure the person changing the room name is the owner. If not, it should ignore
             
-                        return
-                    }
-                    
-                    //We've seen this peer before, just need a new room
-                    newRoom.createNew(roomUUID, roomName: roomName, owner: peer)
-                    newRoom.addToPeers(peer)
-                    
-                    if save(){
-                        
-                        OperationQueue.main.addOperation{ () -> Void in
-                            //Send notification that room has changed. This is needed for cases when the BrowserModel is used to add additional users to a room
-                            NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: self, userInfo: notificationInfo)
-                        }
-                        
-                        completion(newRoom)
-                    }else{
-                        discard()
-                    }
-                })
-                
+            self.relatedRooms[roomUUID] = oldRoom
+            
+            guard let fromPeerUUID = getPeerUUIDFromHash(fromPeerHash),
+                let fromPeerDisplayName = getPeerDisplayName(fromPeerHash) else{
+                print("Error in BrowserModel.joinChatRoom() couldn't get UUID for peer hash \(fromPeerHash)")
                 return
             }
             
-            oldRoom.name = roomName //MARK: - HW3: Saves room name if sender has changed it. Fix this to check to make sure the person changing the room name is the owner
-            oldRoom.addToPeers(self.thisPeer)
-            
-            BrowserModel.findPeers([ownerUUID], completion: {
+            BrowserModel.findPeers([fromPeerUUID], completion: {
                 (peersFound) -> Void in
                 
-                guard let peer = peersFound?.first else{
-                    //If this peer has never been saved before, need to save to old room
-                    let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: coreDataManager.managedObjectContext) as! Peer
+                guard let _ = peersFound?.first else{
                     
-                    newPeer.createNew(ownerUUID, peerName: ownerName, connected: false)
-                    oldRoom.addToPeers(newPeer)
+                    //If this peer has never been saved before
+                    let newPeer = NSEntityDescription.insertNewObject(forEntityName: kCoreDataEntityPeer, into: coreDataManager.managedObjectContext) as! Peer
+                    newPeer.createNew(fromPeerUUID, peerName: fromPeerDisplayName, connected: false)
+                    //newPeer.createNew(roomOwnerUUID, peerName: roomOwnerName, connected: false)
+                    //oldRoom.addToPeers(newPeer)
                     
                     if save(){
-                        completion(oldRoom)
+                        self.pendingInvitedPeers[fromPeerHash] = roomInfo
+                        completion(true)
                     }else{
                         discard()
+                        completion(false)
                     }
                     
                     return
                 }
                 
                 //We've seen this peer before, make sure they are added to the old room
-                oldRoom.addToPeers(peer)
+                //oldRoom.addToPeers(peer)
                 
                 if save(){
-                    completion(oldRoom)
+                    self.pendingInvitedPeers[fromPeerHash] = roomInfo
+                    completion(true)
                 }else{
                     discard()
+                    completion(false)
                 }
             })
 
@@ -602,6 +783,12 @@ class BrowserModel: NSObject{
 
 // MARK: - MPCManager delegate methods implementation
 extension BrowserModel: MPCManagerDelegate{
+    func peerDeniedConnection(_ peerHash: Int, peerName: String) {
+        if pendingInvitedPeers[peerHash] != nil{
+            print("BrowserModel.peerDeniedConnection() peer \(peerName) with hash \(peerHash) denied invitation")
+        }
+    }
+    
     
     //MARK: - HW3: Fix BrowserTable refreshing/reloading when MPC Manager refreshes and "Peers" is the segment selected
     func foundPeer(_ peerHash: Int, withInfo: [String:String]?) {
@@ -643,20 +830,36 @@ extension BrowserModel: MPCManagerDelegate{
             return
         }
         
-        storeNewPeer(peerUUID: peerUUID, peerName: peerName, isConnectedToPeer: true, completion: {
-            (storedPeer) -> Void in
+        wantPeerToJoinRoom(peerHash, completion: {
+            (roomToJoin) -> Void in
             
-            if storedPeer == nil{
-                print("Couldn't store peer info, disconnecting from \(peerName) with uuid \(peerUUID)")
-                mpcManager.disconnect()
-                
-            }else{
-                
-                OperationQueue.main.addOperation{ () -> Void in
-                    //Send notification that view needs to segue to ChatRoom. Notice how this needs to be called on the main thread
-                    NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserConnectedToFirstPeer), object: self)
-                }
+            //Remove the key for the pending invites
+            _ = pendingInvitedPeers.removeValue(forKey: peerHash)
+            self.clearRoomsRelatedToPeer()
+            
+            guard let room = roomToJoin else{
+                return
             }
+                        
+            self.roomToJoin = room //Set the room to join
+            
+            //Update information stored information about this peer
+            storeNewPeer(peerUUID: peerUUID, peerName: peerName, isConnectedToPeer: true, completion: {
+                (storedPeer) -> Void in
+                
+                if storedPeer == nil{
+                    print("Couldn't store peer info, disconnecting from \(peerName) with uuid \(peerUUID)")
+                    mpcManager.disconnect()
+                    
+                }else{
+                    
+                    OperationQueue.main.addOperation{ () -> Void in
+                        //Send notification that view needs to segue to ChatRoom. Notice how this needs to be called on the main thread
+                        NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: self)
+                    }
+                }
+            })
         })
+        
     }
 }

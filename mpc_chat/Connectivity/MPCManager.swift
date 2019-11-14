@@ -45,6 +45,15 @@ protocol MPCManagerDelegate {
     */
     func connectedWithPeer(_ peerHash: Int, peerName: String)
     
+    /**
+
+     - parameters:
+        - peerHash: The hash value for the peer that you are connected with
+        - peerName: The name of the peer you are conneced to
+     
+    */
+    func peerDeniedConnection(_ peerHash: Int, peerName: String)
+    
 }
 
 protocol MPCManagerInvitationDelegate {
@@ -88,9 +97,24 @@ protocol MPCManagerMessageDelegate {
 
 class MPCManager: NSObject {
     
+    /**
+        Any class who wishes to be notified when this peer discover/loses another peer. Also notifies about connection state changes
+        
+    */
     var managerDelegate:MPCManagerDelegate?
+    
+    /**
+        Any class who wishes to be notified when this peer receives an messages and send its own messages.
+        
+    */
     var messageDelegate:MPCManagerMessageDelegate?
+    
+    /**
+        Any class who wishes to be notified when this peer receives an invitaton and respond to invitations.
+        
+    */
     var invitationDelegate:MPCManagerInvitationDelegate?
+    
     fileprivate var session: MCSession!
     fileprivate var myPeer: MCPeerID!
     fileprivate var browser: MCNearbyServiceBrowser!
@@ -101,6 +125,10 @@ class MPCManager: NSObject {
     fileprivate var myAdvertisingName:String!
     fileprivate var myDiscoveryInfo:[String:String]?
     
+    /**
+        Read-only value that gives state information about multipeer connectivity advertizing
+        
+    */
     var deviceIsAdvertising:Bool{
         get {
             return isAdvertising
@@ -122,7 +150,7 @@ class MPCManager: NSObject {
         myAdvertisingName = advertisingName
         myDiscoveryInfo = discoveryInfo
         
-        //Initialize variables
+        //Initialize all properties
         myPeer = getMCPeerID(advertisingName)
         
         //If you want to have security, need to create securityIdentity. This is not straight-forward process
@@ -270,7 +298,18 @@ class MPCManager: NSObject {
         return true
     }
     
-    //MARK: Helper method: Note this function is important, should only have one PeerID per device/user so other devices don't get confused during app restarts
+    
+    /**
+        Properly creates an MCPeerID without creating phantoms (multiple versions of MCPeerID with the same PeerID, but different hash values. Each device only ever needs 1 MCPeerID).
+        
+        - parameters:
+            - displayName: The display name that you want to use for this peer. It is recommended to use this a UUID for displayName
+     
+        - returns: The MCPeerID that will be used to connect with other peers
+     
+        - important: This function is important, should only have one PeerID per device/user so other devices don't get confused during app restarts
+     
+    */
     fileprivate func getMCPeerID(_ displayName: String)->MCPeerID?{
         
         let peerIDKey = displayName
@@ -282,6 +321,7 @@ class MPCManager: NSObject {
             let peerIDDictionary = [peerIDKey:peerID]
             let peerIDData = NSKeyedArchiver.archivedData(withRootObject: peerIDDictionary)
             UserDefaults.standard.setValue(peerIDData, forKey: kPeerID)
+            
             UserDefaults.standard.synchronize()
         }else{
             //Get the data available
@@ -294,11 +334,13 @@ class MPCManager: NSObject {
                 print("Error in MPCManager.getMCPeerID(), could not convert data to the required dictionary format")
                 return nil
             }
-            //See if the MCPeerID is available for the current UUID
+            
+            //See if the MCPeerID is available for the current UUID.
             if peerIDDictionary[peerIDKey] != nil{
                 peerID = peerIDDictionary[peerIDKey]!
             }else{
-                //Create new MCPeerID if one is not available
+                
+                //Create new MCPeerID if one is not available. This usually occurs if the user switched the UUID
                 peerID = MCPeerID(displayName: peerIDKey)
                 let peerIDDictionary = [peerIDKey:peerID]
                 let peerIDData = NSKeyedArchiver.archivedData(withRootObject: peerIDDictionary)
@@ -343,9 +385,10 @@ extension MPCManager: MCSessionDelegate {
         case .notConnected:
             print("Not connected to \(peerID.displayName) with hash \(peerID.hash) in session  \(session)")
             self.messageDelegate?.peerDisconnected(peerID.hash, peerName: peerID.displayName)
+            self.managerDelegate?.peerDeniedConnection(peerID.hash, peerName: peerID.displayName)
     
         @unknown default:
-            print("Hit MPCManager.MCSessionDelegate() hit an unknown state: \(state)")
+            print("MPCManager.MCSessionDelegate() hit an unknown state: \(state)")
         }
     }
     

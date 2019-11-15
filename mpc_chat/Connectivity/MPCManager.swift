@@ -54,9 +54,6 @@ protocol MPCManagerDelegate {
     */
     func peerDeniedConnection(_ peerHash: Int, peerName: String)
     
-}
-
-protocol MPCManagerInvitationDelegate {
     /**
 
         - parameters:
@@ -65,8 +62,10 @@ protocol MPCManagerInvitationDelegate {
             - completion: fromPeer is the hash value of the peer you want to respond to. accept is a bool value stating if you want to connect to peer or not
      
     */
-    func invitationWasReceived(_ fromPeerHash: Int, additionalInfo: [String: Any], completion: @escaping (_ fromPeer: Int, _ accept: Bool) ->Void)
+    func invitationReceived(_ fromPeerHash: Int, additionalInfo: [String: Any], completion: @escaping (_ fromPeer: Int, _ accept: Bool) ->Void)
+    
 }
+
 
 /**
 
@@ -109,12 +108,6 @@ class MPCManager: NSObject {
     */
     var messageDelegate:MPCManagerMessageDelegate?
     
-    /**
-        Any class who wishes to be notified when this peer receives an invitaton and respond to invitations.
-        
-    */
-    var invitationDelegate:MPCManagerInvitationDelegate?
-    
     fileprivate var session: MCSession!
     fileprivate var myPeer: MCPeerID!
     fileprivate var browser: MCNearbyServiceBrowser!
@@ -132,6 +125,16 @@ class MPCManager: NSObject {
     var deviceIsAdvertising:Bool{
         get {
             return isAdvertising
+        }
+    }
+    
+    /**
+        Read-only value that gives state information about multipeer connectivity advertizing
+        
+    */
+    var getDisplayName:String{
+        get {
+            return myPeer.displayName
         }
     }
         
@@ -321,7 +324,6 @@ class MPCManager: NSObject {
             let peerIDDictionary = [peerIDKey:peerID]
             let peerIDData = NSKeyedArchiver.archivedData(withRootObject: peerIDDictionary)
             UserDefaults.standard.setValue(peerIDData, forKey: kPeerID)
-            
             UserDefaults.standard.synchronize()
         }else{
             //Get the data available
@@ -454,14 +456,14 @@ extension MPCManager: MCNearbyServiceAdvertiserDelegate {
 
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping ((Bool, MCSession?) -> Void)) {
         
-        //Information user is interested in should be in "withContext" and passed to invitationWasReceived
+        //Information user is interested in should be in "withContext" and passed to invitationReceived
         guard let additionalInformation = NSKeyedUnarchiver.unarchiveObject(with: context!) as? [String:Any] else{
             print("Error in MPCManager.advertisor Could not unarchive context information with additionalInformation")
             invitationHandler(false, self.session)
             return
         }
         
-        invitationDelegate?.invitationWasReceived(peerID.hash, additionalInfo: additionalInformation, completion: {
+        managerDelegate?.invitationReceived(peerID.hash, additionalInfo: additionalInformation, completion: {
             (fromPeer, accept) -> Void in
             
             if ((self.session.connectedPeers.count < kMCSessionMaximumNumberOfPeers) && accept){

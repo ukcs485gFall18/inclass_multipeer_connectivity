@@ -22,7 +22,8 @@ let kNotificationMPCIsInitialized                       = "mpcIsInitializedNotif
 let kNotificationCoreDataInitialized                    = "coreDataInitializedNotification" //Notify everyone waiting for CoreData to be initialized that it's ready
 let kNotificationBrowserUserTappedCell                  = "browserUserTappedCell"
 let kNotificationBrowserHasAddedUserToRoom              = "browserHasAddedUserToRoom"
-let kNotificationBrowserOtherPeerSentInvite             = "browserOthePeerSentInvite"
+//let kNotificationBrowserReceivedInvite                  = "browserReceivedInvite"
+//let kNotificationBrowserReceivedInviteWhileConnected    = "browserReceivedInviteWhileConnected"
 let kNotificationBrowserScreenNeedsToBeRefreshed        = "browserScreenNeedsToBeRefreshed"
 let kNotificationChatRefreshRoom                        = "chatRefreshRoom"
 let kNotificationChatPeerWasLost                        = "chatPeerWasLost"
@@ -30,7 +31,8 @@ let kNotificationChatNewMessagePosted                   = "chatNewMessagePosted"
 
 
 // MARK: - Local notification keys
-let kNotificationBrowserInviteAlert                     = "browserInviteAlertKey"
+let kNotificationBrowserPeerDisplayName                 = "browserPeerDisplayNameKey"
+let kNotificationBrowserRoomName                        = "browserRoomNameKey"
 let kNotificationChatPeerHashKey                        = "chatPeerHashKey"
 let kNotificationChatPeerUUIDKey                        = "chatPeerUUIDKey"
 let kNotificationChatPeerNameKey                        = "chatPeerNameKey"

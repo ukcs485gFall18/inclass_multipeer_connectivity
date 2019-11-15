@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import UIKit
 import CoreData
 
 class ChatModel: NSObject{
@@ -45,7 +44,7 @@ class ChatModel: NSObject{
         peerUUIDHash = currentBrowserModel.getPeerUUIDHashDictionary
         peerHashUUID = currentBrowserModel.getPeerHashUUIDDictionary
         
-        currentBrowserModel.setMPCMessageManagerDelegate(self)
+        currentBrowserModel.becomeMessageDelegate(self)
     }
     
     //MARK: Private methods
@@ -76,13 +75,26 @@ class ChatModel: NSObject{
     
     //MARK: Public methods
 
+    func becomeBrowserModelConnectedDelegate(_ toBecomeDelegate: BrowserModelConnectedDelegate){
+        currentBrowserModel.browserConnectedDelegate = toBecomeDelegate
+    }
     
     func getPeersConnectedTo()->[Int]{
         return currentBrowserModel.getPeersConnectedTo()
     }
     
     func sendData(data: [String:String], toPeers: [Int]) -> Bool {
-        return currentBrowserModel.sendData(dictionaryWithData: data, toPeers: toPeers)
+        
+        var returnValue = false
+            
+        if currentBrowserModel.sendData(dictionaryWithData: data, toPeers: toPeers){
+            if !save(){
+                print("Error in ChatModel.sendData(). Wasn't able to save data after send. The message '\(data)' to Peers '\(toPeers)' will not be persisted to CoreData")
+            }
+            returnValue = true
+        }
+            
+        return returnValue
     }
     
     func disconnect(){

@@ -13,7 +13,7 @@ import UIKit
 
 class BrowserViewController: UIViewController {
     
-    var model = BrowserModel() //Hint: This initialization can be replaced by the ChatViewController segue preperation if you want to use it again
+    var model:BrowserModel! //Hint: This initialization can be replaced by the ChatViewController segue preperation if you want to use it again
     
     @IBOutlet weak var tblPeers: UITableView!
     @IBOutlet weak var browserSegment: UISegmentedControl!
@@ -36,13 +36,15 @@ class BrowserViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        model = BrowserModel()
+        
         // Do any additional setup after loading the view
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleScreenNeedsToBeRefreshed(_:)), name: Notification.Name(rawValue: kNotificationBrowserScreenNeedsToBeRefreshed), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleSegueToChatRoom(_:)), name: Notification.Name(rawValue: kNotificationBrowserHasAddedUserToRoom), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserViewController.handleBrowserUserTappedCell(_:)), name: Notification.Name(rawValue: kNotificationBrowserUserTappedCell), object: nil)
         
-        model.setMPCInvitationManagerDelegate(self)
-        
+        model.browserDelegate = self
         tblPeers.delegate = self
         tblPeers.dataSource = self
         
@@ -233,85 +235,50 @@ class BrowserViewController: UIViewController {
     
 }
 
-// MARK: MPCManager delegate methods implementation
-extension BrowserViewController: MPCManagerInvitationDelegate{
+extension BrowserViewController: BrowserModelDelegate{
     
-    func invitationWasReceived(_ fromPeerHash: Int, additionalInfo: [String: Any], completion: @escaping (_ fromPeer: Int, _ accept: Bool) ->Void) {
-        
-        //If the user is connected to anyone, deny all invitations received
-        if model.getPeersConnectedTo().count > 0{
-            
-            guard let peerDisplayName = model.getPeerDisplayName(fromPeerHash) else{
-                print("Error in ChatViewController.invitationWasReceived(). Couldn't get displayName for \(fromPeerHash)")
-                completion(fromPeerHash, false)
-                return
-            }
-            
-            if model.hasThisPeerTriedToConnectBefore(peerHash: fromPeerHash, peerDisplayName: peerDisplayName){
-                //Do nothing and ignore the peer
-                completion(fromPeerHash, false)
-                return
-            }
-            
-            let alert = UIAlertController(title: "", message: "\(peerDisplayName) want's to join your chat. You will need to add them manually or exit this room if you want to chat with them", preferredStyle: UIAlertController.Style.alert)
-            
-            let doneAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-                print("User tapped Okay")
-            }
-            
-            alert.addAction(doneAction)
-            
-            //Notice all UI calls need to be on the main thread
-            OperationQueue.main.addOperation{ () -> Void in
-                
-                //Only present this alert if this view is the main view
-                if self.view.window != nil{
-                    self.present(alert, animated: true, completion: nil)
-                }else{
-                    //Send notification that top view needs to display alert.
-                    NotificationCenter.default.post(name: Notification.Name(rawValue: kNotificationBrowserOtherPeerSentInvite), object: self, userInfo: [kNotificationBrowserInviteAlert:alert])
-                }
-            }
+    func respondToInvitation(_ fromPeerHash: Int, additionalInfo: [String : Any], completion: @escaping (Int, Bool) -> Void) {
+    
+        guard let peerDisplayName = additionalInfo[kNotificationBrowserPeerDisplayName] as? String,
+            let roomName = additionalInfo[kNotificationBrowserRoomName] as? String else{
+            print("Error in BrowserViewController.respondToInvitation(). Couldn't get \(kNotificationBrowserPeerDisplayName) or \(kNotificationBrowserRoomName) from notification dictionary \(additionalInfo).")
             completion(fromPeerHash, false)
-        }
-        
-        guard let fromPeerName = model.getPeerDisplayName(fromPeerHash) else{
-            print("Error in BrowserViewController.invitationWasReceived(). Couldn't get displayName or UUID for \(fromPeerHash)")
             return
         }
-        
-        guard let roomName = additionalInfo[kCommunicationsRoomName] as? String else{
-                print("Error in BrowserViewController.invitationWasReceived(). RoomName is missing from invite \(additionalInfo)")
-            return
-        }
-        
-        let alert = UIAlertController(title: "", message: "\(fromPeerName) wants you to join \(roomName).", preferredStyle: UIAlertController.Style.alert)
-        
-        let acceptAction = UIAlertAction(title: "Accept", style: UIAlertAction.Style.default)  {(alertAction) -> Void in
-            
-            self.model.joinChatRoom(fromPeerHash, roomInfo: additionalInfo, completion: {
-                (isReadyToJoin) -> Void in
-                
-                completion(fromPeerHash, isReadyToJoin)
-            })
-            
-        }
-        
-        let declineAction = UIAlertAction(title: "Cancel", style: UIAlertAction.Style.cancel) {(alertAction) -> Void in
-            completion(fromPeerHash, false)
-        }
-        
-        alert.addAction(acceptAction)
-        alert.addAction(declineAction)
-        
+           
+        //Notice all UI calls need to be on the main thread. This is because this notification could possible come from a background thread
         OperationQueue.main.addOperation{ () -> Void in
-            self.present(alert, animated: true, completion: nil)
+            
+            let alert = UIAlertController(title: "", message: "\(peerDisplayName) wants you to join \(roomName).", preferredStyle: UIAlertController.Style.alert)
+            
+            let acceptAction = UIAlertAction(title: "Accept", style: UIAlertAction.Style.default)  {(alertAction) -> Void in
+                
+                self.model.joinChatRoom(fromPeerHash, roomInfo: additionalInfo, completion: {
+                    (isReadyToJoin) -> Void in
+                    
+                    //Depending on if the room is ready on this side, accept or decline the users invite
+                    completion(fromPeerHash, isReadyToJoin)
+                })
+                
+            }
+            
+            let declineAction = UIAlertAction(title: "Cancel", style: UIAlertAction.Style.cancel) {(alertAction) -> Void in
+                //Decline users invite
+                completion(fromPeerHash, false)
+            }
+            
+            alert.addAction(acceptAction)
+            alert.addAction(declineAction)
+            
+            //Only present this alert if this view is the main view
+            if self.view.window != nil{
+                self.present(alert, animated: true, completion: nil)
+            }
         }
-        
     }
-    
 }
 
+    
 // MARK: UITableView related method implementation
 extension BrowserViewController: UITableViewDelegate, UITableViewDataSource{
     

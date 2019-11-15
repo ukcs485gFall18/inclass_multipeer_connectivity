@@ -84,9 +84,9 @@ class ChatViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handlePeerAddedToRoom(_:)), name: Notification.Name(rawValue: kNotificationChatRefreshRoom), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handlePeerWasLost(_:)), name: Notification.Name(rawValue: kNotificationChatPeerWasLost), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handleNewMessagePosted(_:)), name: Notification.Name(rawValue: kNotificationChatNewMessagePosted), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.handlePeerSentInvite(_:)), name: Notification.Name(rawValue: kNotificationBrowserOtherPeerSentInvite), object: nil)
         
         // Do any additional setup after loading the view.
+        model.becomeBrowserModelConnectedDelegate(self)
         chatTable.delegate = self
         chatTable.dataSource = self
         chatTable.estimatedRowHeight = 60.0
@@ -199,6 +199,7 @@ class ChatViewController: UIViewController {
         }
     }
     
+    
     //MARK: Notification receivers
     @objc func handlePeerAddedToRoom(_ notification: Notification) {
         
@@ -245,17 +246,6 @@ class ChatViewController: UIViewController {
         
     }
     
-    @objc func handlePeerSentInvite(_ notification: Notification) {
-        
-        //Unrwrap the alert that was received
-        guard let alert = notification.userInfo?[kNotificationBrowserInviteAlert] as? UIAlertController else{
-            print("Error in ChatViewController.handlePeerSentInvite(). The key \(kNotificationBrowserInviteAlert) was not found in the notification")
-            return
-        }
-        
-        self.present(alert, animated: true, completion: nil)
-    }
-    
     @objc func handlePeerWasLost(_ notification: Notification) {
     
         setConnectedPeersButton()
@@ -269,7 +259,6 @@ class ChatViewController: UIViewController {
         let alert = UIAlertController(title: "", message: "\(peerName) left the chat", preferredStyle: UIAlertController.Style.alert)
         
         let doneAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
-            
             self.checkIfLastConnection()
         }
         
@@ -283,6 +272,40 @@ class ChatViewController: UIViewController {
             }
         })
     }
+    
+}
+
+extension ChatViewController: BrowserModelConnectedDelegate {
+    
+    func respondToInvitation(_ fromPeerHash: Int, additionalInfo: [String : Any], completion: @escaping (Int, Bool) -> Void) {
+        
+        guard let peerDisplayName = additionalInfo[kNotificationBrowserPeerDisplayName] as? String else{
+            print("Error in ChatViewController.respondToInvitation(). Couldn't get \(kNotificationBrowserPeerDisplayName) from notification dictionary.")
+            completion(fromPeerHash,false)
+            return
+        }
+           
+        //Notice all UI calls need to be on the main thread. This is because this notification could possible come from a background thread
+        OperationQueue.main.addOperation{ () -> Void in
+            
+            let alert = UIAlertController(title: "", message: "\(peerDisplayName) want's to join your chat. You will need to add them manually or exit this room if you want to chat with them", preferredStyle: UIAlertController.Style.alert)
+            
+            let doneAction = UIAlertAction(title: "Okay", style: UIAlertAction.Style.default) { (alertAction) -> Void in
+                print("User tapped Okay")
+                
+                //Decline users invite since you are conneced
+                completion(fromPeerHash,false)
+            }
+            
+            alert.addAction(doneAction)
+            
+            //Only present this alert if this view is the main view
+            if self.view.window != nil{
+                self.present(alert, animated: true, completion: nil)
+            }
+        }
+    }
+    
     
 }
 

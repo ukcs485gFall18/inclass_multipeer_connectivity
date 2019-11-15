@@ -9,6 +9,30 @@
 import Foundation
 import CoreData
 
+protocol BrowserModelDelegate {
+    /**
+
+        - parameters:
+            - fromPeerHash: The hash value for the peer that was found
+            - additionalInfo: Additional information provided from peer
+            - completion: fromPeer is the hash value of the peer you want to respond to. accept is a bool value stating if you want to connect to peer or not
+     
+    */
+    func respondToInvitation(_ fromPeerHash: Int, additionalInfo: [String: Any], completion: @escaping (_ fromPeer: Int, _ accept: Bool) ->Void)
+}
+
+protocol BrowserModelConnectedDelegate {
+    /**
+
+        - parameters:
+            - fromPeerHash: The hash value for the peer that was found
+            - additionalInfo: Additional information provided from peer
+            - completion: fromPeer is the hash value of the peer you want to respond to. accept is a bool value stating if you want to connect to peer or not
+     
+    */
+    func respondToInvitation(_ fromPeerHash: Int, additionalInfo: [String: Any], completion: @escaping (_ fromPeer: Int, _ accept: Bool) ->Void)
+}
+
 class BrowserModel: NSObject{
 
     //MARK: Private variables
@@ -57,12 +81,14 @@ class BrowserModel: NSObject{
     */
     fileprivate var pendingInvitedPeers = [Int:[String:Any]]()
     
-    
     /**
         Rooms that a we might want to ask a user to join
     */
     fileprivate var relatedRooms = [String:Room]()
     
+    /**
+        Peers that have asked to join while this user was in a connection. It's used to block their notifications
+    */
     fileprivate var peersWhoTriedToConnect = [Int:String]()
     
     //MARK: Public variables
@@ -127,6 +153,18 @@ class BrowserModel: NSObject{
         }
     }
     
+    /**
+        Any class who wishes to be delegated to when this peer receives an invitation while disconned.
+        
+    */
+    var browserDelegate:BrowserModelDelegate?
+    
+    /**
+        Any class who wishes to be delegated to when this peer receives an invitation while MPC Manager is connected
+        
+    */
+    var browserConnectedDelegate:BrowserModelConnectedDelegate?
+    
     
     /**
         Initializes a new BrowserModel to began wireless discovery and connectivity
@@ -157,10 +195,10 @@ class BrowserModel: NSObject{
         
         //The class needes to become an observer of the MPCManager to know when users are able to be browsed and connections are ready to be establisehd. When MPCManager is ready, handleCoreDataIsReady() will be called automatically because we are observing.
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
+        
         //Instantiate the MPCManager so we can browse for users and create connections
-        
         self.mpcManager = MPCManager(kAppName, advertisingName: peerDisplayName, discoveryInfo: discovery)
-        
+
         //Become a delegate of the MPCManager instance so we act when a users are found and invitations are receiced. See MPCManagerDelegate to see how we conform to the protocol
         mpcManager.managerDelegate = self
         
@@ -262,22 +300,26 @@ class BrowserModel: NSObject{
         })
     }
     
+    /**
+        Persists all created entities to CoreData
+     
+    */
     fileprivate func save()->Bool{
         return coreDataManager.saveContext()
     }
     
+    /**
+        Discards any changes made to the undo stack and restors CoreData back to it's previous state
+     
+    */
     fileprivate func discard()->(){
         coreDataManager.managedObjectContext.rollback()
     }
     
 
-    //MARK: Public methods
-    func setMPCMessageManagerDelegate(_ toBecomeDelegate: MPCManagerMessageDelegate){
+    //MARK: Public methods - these can be used by any outside class
+    func becomeMessageDelegate(_ toBecomeDelegate: MPCManagerMessageDelegate){
         mpcManager.messageDelegate = toBecomeDelegate
-    }
-    
-    func setMPCInvitationManagerDelegate(_ toBecomeDelegate: MPCManagerInvitationDelegate){
-        mpcManager.invitationDelegate = toBecomeDelegate
     }
     
     func getPeerDisplayName(_ peerHash: Int)-> String?{
@@ -293,6 +335,11 @@ class BrowserModel: NSObject{
     }
     
     func disconnect(){
+        
+        if !save(){
+            print("Error in BrowserModel.disconnect(). Couldn't save to CoreData before disconnecting")
+        }
+        
         roomToJoin = nil
         peersWhoTriedToConnect.removeAll()
         mpcManager.disconnect()
@@ -560,9 +607,9 @@ class BrowserModel: NSObject{
         
     }
     
-    func createNewChatRoom(_ owner: String, peerUUID: String, roomUUID:String?=nil, roomName: String, completion : (_ room:Room?) -> ()){
+    func createNewChatRoom(_ ownerUUID: String, peerUUID: String, roomUUID:String?=nil, roomName: String, completion : (_ room:Room?) -> ()){
         
-        var (owner, peerToJoin, peerUUIDToSearch) = whatTypeOfPeerIsDevice(owner, peerToJoinUUID: peerUUID)
+        var (owner, peerToJoin, peerUUIDToSearch) = whatTypeOfPeerIsDevice(ownerUUID, peerToJoinUUID: peerUUID)
         
         //Check if this method was used correctly
         if owner == nil && peerToJoin == nil && peerUUIDToSearch == nil{
@@ -861,5 +908,43 @@ extension BrowserModel: MPCManagerDelegate{
             })
         })
         
+    }
+    
+    func invitationReceived(_ fromPeerHash: Int, additionalInfo: [String: Any], completion: @escaping (_ fromPeer: Int, _ accept: Bool) ->Void) {
+        
+        guard let peerDisplayName = mpcManager.getPeerDisplayName(fromPeerHash) else{
+            print("Error in BrowserModel.invitationReceived(). Couldn't get displayName for \(fromPeerHash)")
+            completion(fromPeerHash, false)
+            return
+        }
+        
+        //Prepare notification information to send to any class that is Observing
+        var informationReceived = additionalInfo
+        informationReceived[kNotificationBrowserPeerDisplayName] = peerDisplayName
+        
+        //If the user is connected to anyone, deny all invitations received
+        if mpcManager.getPeersConnectedTo().count > 0{
+            
+            if self.hasThisPeerTriedToConnectBefore(peerHash: fromPeerHash, peerDisplayName: peerDisplayName){
+                //Do nothing and ignore the peer
+                completion(fromPeerHash, false)
+                return
+            }
+            
+            
+            browserConnectedDelegate?.respondToInvitation(fromPeerHash, additionalInfo: informationReceived, completion: completion)
+            
+        }else{
+        
+            guard let roomName = additionalInfo[kCommunicationsRoomName] as? String else{
+                print("Error in BrowserModel.invitationReceived(). RoomName is missing from invite \(additionalInfo)")
+                return
+            }
+        
+            //Add the room to join to the notificaiton
+            informationReceived[kNotificationBrowserRoomName] = roomName
+            
+            browserDelegate?.respondToInvitation(fromPeerHash, additionalInfo: informationReceived, completion: completion)
+        }
     }
 }

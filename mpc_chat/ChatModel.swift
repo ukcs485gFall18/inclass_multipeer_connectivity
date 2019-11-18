@@ -231,10 +231,10 @@ class ChatModel: NSObject{
     
     @objc func handleChatRoomHasBeenUpdated(_ notification: Notification) {
         
-        BrowserModel.findRooms([room.uuid], completion: {
-            (roomsFound) -> Void in
+        BrowserModel.findRoom(room.uuid, completion: {
+            (roomFound) -> Void in
             
-            guard let newRoom = roomsFound?.first else{
+            guard let newRoom = roomFound else{
                 print("Error in ChatModel.handleChatRoomHasBeenUpdated(). No room was found")
                 return
             }

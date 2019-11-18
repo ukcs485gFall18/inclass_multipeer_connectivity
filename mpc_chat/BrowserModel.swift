@@ -190,16 +190,16 @@ class BrowserModel: NSObject{
         
         peerUUID = uuid
         
-        //The class needes to become an observer of CoreData to know when it's ready to read/write data. When CoreData is ready, handleCoreDataIsReady() will be called automatically because we are observing.
+        //The class needes to become an observer of CoreData to know when it's ready to read/write data. When CoreData is ready, handleCoreDataIsReady() will be called automatically because we are observing. Note that CoreData and MPCManager both need to be ready to start browsing and connecting
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationCoreDataInitialized), object: nil)
         
-        //The class needes to become an observer of the MPCManager to know when users are able to be browsed and connections are ready to be establisehd. When MPCManager is ready, handleCoreDataIsReady() will be called automatically because we are observing.
+        //The class needes to become an observer of the MPCManager to know when users are able to be browsed and connections are ready to be establisehd. When MPCManager is ready, handleCoreDataIsReady() will be called automatically because we are observing. Note that CoreData and MPCManager both need to be ready to start browsing and connecting
         NotificationCenter.default.addObserver(self, selector: #selector(BrowserModel.handleCoreDataIsReady(_:)), name: Notification.Name(rawValue: kNotificationMPCIsInitialized), object: nil)
         
         //Instantiate the MPCManager so we can browse for users and create connections
         self.mpcManager = MPCManager(kAppName, advertisingName: peerDisplayName, discoveryInfo: discovery)
 
-        //Become a delegate of the MPCManager instance so we act when a users are found and invitations are receiced. See MPCManagerDelegate to see how we conform to the protocol
+        //Become a delegate of the MPCManager instance so we act when a users are found and invitations are received. See MPCManagerDelegate to see how we conform to the protocol
         mpcManager.managerDelegate = self
         
     }
@@ -207,9 +207,9 @@ class BrowserModel: NSObject{
     
     //MARK: Private methods - these are used internally by the BrowserModel only
     /**
-        Checks to see if CoreData is ready. If CoreData is ready, then the updated values of this user is stored. This is in case the user changes their displayName. If CoreData isn't ready, this method does nothing. This is called whenever the notification that references this method is fired.
+        Checks to see if CoreData is ready. If CoreData is ready, then the updated values of this user is stored. This is in case the user changes their displayName. If CoreData isn't ready, this method does nothing. This is called whenever the notification that references this method is fired. It also checks to make sure MPCManager is ready to start browsing user and connecting.
          - important:
-            - This method is made available to objective-c hence the @objc in front of it's declaration. This is required since part of the Notificaiton Center is still written on Objective-C. Swift will complain if this isn't there and will automatically add it back
+            - This method is made available to Objective-C hence the @objc in front of it's declaration. This is required since part of the Notificaiton Center is still written on Objective-C. Swift will complain if this isn't there and will automatically add it back
      
         - parameters:
             - notification: Has additional informaiton that was sent from the notifier
@@ -270,24 +270,20 @@ class BrowserModel: NSObject{
             - roomsFound: An array of rooms found related to the owner and withPeer
      
     */
-    fileprivate func findRooms(_ owner: Peer, withPeer peer: Peer, withRoomUUID roomID: String?=nil, completion : (_ roomsFound:[Room]?) -> ()){
+    fileprivate func findRooms(_ owner: Peer, withPeer peer: Peer, completion : (_ roomsFound:[Room]?) -> ()){
         
         //Build query for this user as owner.
 
         var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [owner], peer))
-        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeOwner) IN %@ AND %@ IN \(kCoreDataRoomAttributePeers)", [peer], owner))
-        
-        if roomID != nil{
-            predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeUUID) == %@", roomID!))
-        }
+        predicateArray.append(NSPredicate(format: "%@ == \(kCoreDataRoomAttributeOwner) AND %@ IN \(kCoreDataRoomAttributePeers)", owner, peer))
+        predicateArray.append(NSPredicate(format: "%@ == \(kCoreDataRoomAttributeOwner) AND %@ IN \(kCoreDataRoomAttributePeers)", peer, owner))
         
         let compoundQuery = NSCompoundPredicate(orPredicateWithSubpredicates: predicateArray)
         
         //Create an array of rooms that currently contains 0 rooms
         var roomsToReturn = [Room]()
         
-        coreDataManager.queryCoreDataRooms(compoundQuery, sortBy: kCoreDataRoomAttributeModifiedAt, inDescendingOrder: true, completion: {
+        coreDataManager.queryCoreDataRooms(compoundQuery, sortBy: kCoreDataRoomAttributeCreatedAt, inDescendingOrder: true, completion: {
             (roomsFound) -> Void in
             
             //If rooms ware found, add them to the array of rooms created earlier
@@ -352,7 +348,7 @@ class BrowserModel: NSObject{
     func storeNewPeer(peerUUID: String, peerName: String, isConnectedToPeer: Bool, completion : (_ peer:Peer?) -> ()){
         
         var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributePeerUUID) IN %@", [peerUUID]))
+        predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributePeerUUID) == %@", peerUUID))
         
         let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
         
@@ -467,7 +463,7 @@ class BrowserModel: NSObject{
         
     }
     
-    func findOldChatRooms(_ ownerUUID: String?=nil, peerToJoinUUID: String?=nil, roomUUID: String?=nil, completion : (_ roomInformation:[String:[String:String]]) -> ()){
+    func findOldChatRooms(_ ownerUUID: String?=nil, peerToJoinUUID: String?=nil, completion : (_ roomInformation:[String:[String:String]]) -> ()){
         
         //Build invite information to send to user
         var roomInfo = [String:[String:String]]()
@@ -497,7 +493,7 @@ class BrowserModel: NSObject{
             }
 
             //If we made it this far, the owner and Peer have succesfully been set, so it's safe to unwrap both of them and search for the rooms they belong to.
-            findRooms(owner!, withPeer: peerToJoin!, withRoomUUID: roomUUID, completion: {
+            findRooms(owner!, withPeer: peerToJoin!, completion: {
                 (roomsFound) -> Void in
                 
                 //MARK: - HW3: How do you modify this to return all rooms found related to the users?
@@ -641,7 +637,7 @@ class BrowserModel: NSObject{
                 }
                 
                 //Store this peer in CoreData
-                storeNewPeer(peerUUID: peerUUID, peerName: peerName, isConnectedToPeer: false, completion: {
+                storeNewPeer(peerUUID: peerUUIDToSearch!, peerName: peerName, isConnectedToPeer: false, completion: {
                     (storedPeer) -> Void in
                     
                     guard let peerFound = storedPeer else{
@@ -714,12 +710,12 @@ class BrowserModel: NSObject{
             return
         }
         
-        BrowserModel.findRooms([roomUUID], completion: {
+        BrowserModel.findRoom(roomUUID, completion: {
             
-            (roomsFound) -> Void in
+            (roomFound) -> Void in
             
             //There should only be one room found for this roomUUID since roomUUIDs are unique
-            guard let oldRoom = roomsFound?.first else{
+            guard let oldRoom = roomFound else{
                 
                 _ = createTemporaryRoom(fromPeerHash, uuidOfRoom: roomUUID, nameOfRoom: roomName, ownerOfRoomUUID: roomOwnerUUID)
                 
@@ -728,6 +724,13 @@ class BrowserModel: NSObject{
             }
             
             oldRoom.name = roomName //MARK: - HW3: Saves room name if sender has changed it. Fix this to check to make sure the person changing the room name is the owner. If not, it should ignore
+            
+            //Debug
+            print("Owner: \(oldRoom.owner.uuid)")
+            for peer in oldRoom.peers {
+                print(peer.peerName)
+                print(peer.uuid)
+            }
             
             self.relatedRooms[roomUUID] = oldRoom
             
@@ -809,19 +812,24 @@ class BrowserModel: NSObject{
         })
     }
     
-    class func findRooms(_ roomUUIDs: [String], completion : (_ roomsFound:[Room]?) -> ()){
+    class func findRoom(_ roomUUID: String, completion : (_ roomFound:Room?) -> ()){
         
         let coreDataManager = CoreDataManager.sharedCoreDataManager
         
         var predicateArray = [NSPredicate]()
-        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeUUID) IN %@", roomUUIDs))
+        predicateArray.append(NSPredicate(format: "\(kCoreDataRoomAttributeUUID) == %@", roomUUID))
         
         let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
         
         coreDataManager.queryCoreDataRooms(compoundQuery, completion: {
             (rooms) -> Void in
             
-            completion(rooms)
+            guard let room = rooms?.first else{
+                completion(nil)
+                return
+            }
+            
+            completion(room)
             
         })
     }

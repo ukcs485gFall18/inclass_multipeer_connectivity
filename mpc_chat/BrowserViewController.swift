@@ -13,7 +13,7 @@ import UIKit
 
 class BrowserViewController: UIViewController {
     
-    var model:BrowserModel! //Hint: This initialization can be replaced by the ChatViewController segue preperation if you want to use it again
+    var model:BrowserModel! //Hint: This initialization can be replaced by the ChatViewController segue preperation if you want to use it again. Or if it's not nil, it can be used as is.
     
     @IBOutlet weak var tblPeers: UITableView!
     @IBOutlet weak var browserSegment: UISegmentedControl!

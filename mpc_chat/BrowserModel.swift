@@ -314,22 +314,48 @@ class BrowserModel: NSObject{
     
 
     //MARK: Public methods - these can be used by any outside class
+    /**
+        Allows any class who conforms to the MPCManagerMessageDelegate protocol to be notified when messages are received along with being notified when a connection has been disconnected
+        
+        - parameters:
+            - toBecomeDelegate: The class that wishes to become a delegate
+    */
     func becomeMessageDelegate(_ toBecomeDelegate: MPCManagerMessageDelegate){
         mpcManager.messageDelegate = toBecomeDelegate
     }
     
+    /**
+        Gets the current Display Name of a peer from a uniqe hash value. Note that each broadcasting peer has it's own hashValue. So two peers can have the same displayName and can be the same person, but each device they own will broadcast a different hash. The hash value allows you to identify what device is communicating with you. Display names are not unique, as an all users essentiall can have the same display name.
+        
+        - parameters:
+            - peerHash: The unique hash value of the peer you want the displayName for
+    */
     func getPeerDisplayName(_ peerHash: Int)-> String?{
         return mpcManager.getPeerDisplayName(peerHash)
     }
     
+    /**
+        Gets the current UUID of a peer from a uniqe hash value. Note that each broadcasting peer has it's own hashValue. So two peers can have the same UUID and can be the same person, but each device they own will broadcast a different hash. The hash value allows you to identify what device is communicating with you. An individual user will have 1 UUID that is used across multiple devices (meaning different hashes)
+        
+        - parameters:
+            - peerHash: The unique hash value of the peer you want the displayName for
+    */
     func getPeerUUIDFromHash(_ peerHash: Int) -> String?{
         return peerHashUUID[peerHash]
     }
     
+    /**
+        Gets the current hashValue of a peer from a UUID.
+        - parameters:
+            - peerUUID: The UUID that you are looking for the hash for
+    */
     func getPeerHashFromUUID(_ peerUUID: String) -> Int?{
         return peerUUIDHash[peerUUID]
     }
     
+    /**
+        Allows you to disconnect from the current chatroom, assuming you are already connected. Note that all chat information received/sent is saved before the disconnection occurs to ensure data isn't lost
+    */
     func disconnect(){
         
         if !save(){
@@ -341,21 +367,40 @@ class BrowserModel: NSObject{
         mpcManager.disconnect()
     }
     
+    /**
+        Sends messages to peers of specific hashValues
+        - parameters:
+            - dictionaryWithData: A dictionary of key value strings to be sent to the connected peers
+            - toPeers: An array of peers hashValues to should receive the message. Note that if you only want to send the message to 1 user, only one hashValue is needed in the array
+    */
     func sendData(dictionaryWithData: [String:String], toPeers: [Int]) -> Bool {
         return mpcManager.sendData(dictionaryWithData: dictionaryWithData, toPeers: toPeers)
     }
     
+    /**
+        Saves a specific state "asynchronously" of a peer to this devices CoreData. Note that if a Peer changes their particular Peer entity on their device, your device will not update until this method is called again
+        - parameters:
+            - peerUUID: The unique identifier of the peer to save in String form
+            - peerName: The display Name of the peer to save in String form
+            - isConnectedToPeer: A boolean determining if the current state to store was connected to the Peer
+            - completion: The asyncronous return block which is returned after all saving has been completed on the background thread
+            - peer: The CoreData Peer entity returned after the asynchronous completion block is returned
+    */
     func storeNewPeer(peerUUID: String, peerName: String, isConnectedToPeer: Bool, completion : (_ peer:Peer?) -> ()){
         
+        //Note that when querying the database, you can make a sophisticated query by making any combination of NSPredicate's. Below is a very simple query
         var predicateArray = [NSPredicate]()
         predicateArray.append(NSPredicate(format: "\(kCoreDataPeerAttributePeerUUID) == %@", peerUUID))
         
+        //Now you can use NSCompoundPredicate and decide if you want to "and" or "or" the predicates in the array. For this particular query, you can "and" or "or" as they will yield the same result
         let compoundQuery = NSCompoundPredicate(andPredicateWithSubpredicates: predicateArray)
         
+        //This is an asyncronous call to CoreData asking for it to search the Peers entity for all data matching the query above
         coreDataManager.queryCoreDataPeers(compoundQuery, sortBy: kCoreDataPeerAttributeLastConnected, inDescendingOrder: true, completion: {
             
             (peersFound) -> Void in
             
+            //Once the quering is completed, we check to see if any peers were found matching the query
             guard let peers = peersFound else{
                 completion(nil)
                 return
@@ -387,6 +432,14 @@ class BrowserModel: NSObject{
         })
     }
     
+    /**
+        "Asynchronously" get the last time a specific peer was seen and connected to
+        - parameters:
+            - peerUUID: The unique identifier of the peer to save in String form
+            - completion: The asyncronous return block which is returned after all saving has been completed on the background thread
+            - lastSeen: The Date when this peer was last seen in the browser. Note this also has all time components because of the Date class. This is returned after the asynchronous completion block is ready
+            - lastConnected: The Date when this peer was last connected in the same chatroom with this Peer. Note this also has all time components because of the Date class. This is returned after the asynchronous completion block is ready
+    */
     func lastTimeSeenPeer(_ peerUUID: String, completion : (_ lastSeen: Date?, _ lastConnected: Date?) -> ()){
         
         BrowserModel.findPeers([peerUUID], completion: {
@@ -401,10 +454,17 @@ class BrowserModel: NSObject{
         })
     }
     
-    
+    /**
+        Invites a peer that has  the uniqe hash value of peerHash. You also send the peer any meaning "info" such as Room owner and name characteristics to help them determine if they want to connect with you
+        
+        - parameters:
+            - peerHash: The unique hash value of the peer
+            - info: The unique hash value of the peer
+    */
     func invitePeer(_ peerHash: Int, info: [String:Any]){
         
         pendingInvitedPeers[peerHash] = info
+        //Tell the MPCManager to send invitation infomation to this peer
         mpcManager.invitePeer(peerHash, additionalInfo: info)
     }
     
@@ -424,10 +484,27 @@ class BrowserModel: NSObject{
         mpcManager.startAdvertising()
     }
     
+    /**
+        Get all peers you are currently connected to
+        
+        - returns:
+            - An array of uniqueHash values of all Peer devices you are connected to
+    */
     func getPeersConnectedTo()->[Int]{
         return mpcManager.getPeersConnectedTo()
     }
     
+    /**
+        Determine if your current device is the Owner of the Chat Room room you are about to join or if you are simpley a Member of the ChatRoom
+        - parameters:
+            - ownerUUID: The unique identifier of the owner of the room in String form. This value defaults to nil if none is specified
+            - peerToJoinUUID: The unique identifier of the peer who will be joining the room in String form. This value defaults to nil if none is specified
+
+        - returns:
+            - owner: The CoreData entity form of the Owner of the room, Note that value can be nil if the Owner couldn't be determined or found in CoreData
+            - peerToJoin: The CoreData entity form of the Peer who is joining the room, Note that value can be nil if the peerToJoin couldn't be determined or found in CoreData
+            - uuidToSearch: The string value of the uuid that couldn't be found for the "owner" or "peerToJoin". Note that this device is always either a "owner" or the "peerToJoin", so if this returns nil, it means the ownerUUID or peerToJoinUUID were specified incorrectly or something is wrong with the app
+    */
     fileprivate func whatTypeOfPeerIsDevice(_ ownerUUID: String?=nil, peerToJoinUUID: String?=nil)->(owner:Peer?, peerToJoin:Peer?, uuidToSearch: String?){
         
         //Check if this method was used correctly
@@ -463,6 +540,15 @@ class BrowserModel: NSObject{
         
     }
     
+    /**
+        "Asynchronously" finds all saved chat rooms in CoreData where between ownerUUID and peerToJoinUUID
+        - parameters:
+            - ownerUUID: The unique identifier of the owner of the room in String form. This value defaults to nil if none is specified
+            - peerToJoinUUID: The unique identifier of the peer who will be joining the room in String form. This value defaults to nil if none is specified
+            - completion: The asyncronous return block which is returned after all saving has been completed on the background thread
+            - lastSeen: The Date when this peer was last seen in the browser. Note this also has all time components because of the Date class. This is returned after the asynchronous completion block is ready
+            - lastConnected: The Date when this peer was last connected in the same chatroom with this Peer. Note this also has all time components because of the Date class. This is returned after the asynchronous completion block is ready
+    */
     func findOldChatRooms(_ ownerUUID: String?=nil, peerToJoinUUID: String?=nil, completion : (_ roomInformation:[String:[String:String]]) -> ()){
         
         //Build invite information to send to user
@@ -470,13 +556,14 @@ class BrowserModel: NSObject{
         
         var (owner,peerToJoin,peerToSearchUUID) = whatTypeOfPeerIsDevice(ownerUUID, peerToJoinUUID: peerToJoinUUID)
         
-        //Check if this method was used correctly
+        //Check if whatTypeOfPeerIsDevice method was used correctly and returned valid information (check the comments of this method for more info)
         if owner == nil && peerToJoin == nil && peerToSearchUUID == nil{
             print("Error in BrowserModel.findOldChatRooms(). Both owner and peerToJoin can't be nil. Only set the one to nil that belongs to this specific device")
             completion(roomInfo)
             return
         }
         
+        //Asyncronously find the peer of peerToSearchUUID. Note that we can safely force unwrap "peerToSearchUUID" because it was checked in the if statement above
         BrowserModel.findPeers([peerToSearchUUID!], completion: {
             (peersFound) -> Void in
 
@@ -517,6 +604,17 @@ class BrowserModel: NSObject{
         
     }
     
+    /**
+        When preparing to establish a connection, temporary room information is stored and only used if a connection is "physically" established between the two peers
+        - parameters:
+            - peerHash: The unique identifier of the owner of the room in String form. This value defaults to nil if none is specified
+            - peerDisplayName: The displayName of the peer we are preparing to join a room with in String form. This value defaults to nil if none is specified
+            - uuidOfRoom: The unique identifier of the room we are preparting to join in String form. This value defaults to nil if none is specified
+            - nameOfRoom: The name of the room we are planning to join in String form. This value defaults to nil if none is specified
+            - ownerOfRoomUUID: The unique identifier of the owner of the room we are preparing to join in String form. This value defaults to nil if none is specified
+        - returns:
+            - a temporary dictionary array that can be used to seend to the other peer
+    */
     func createTemporaryRoom(_ peerHash: Int, peerDisplayName:String?=nil, uuidOfRoom: String?=nil, nameOfRoom:String?=nil, ownerOfRoomUUID:String?=nil)->[String:String]{
         
         let roomUUID:String

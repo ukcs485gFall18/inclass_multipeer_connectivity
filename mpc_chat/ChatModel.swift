@@ -12,17 +12,9 @@ import CoreData
 class ChatModel: NSObject{
     
     fileprivate let coreDataManager = CoreDataManager.sharedCoreDataManager
-    fileprivate var peerUUIDHash:[String:Int]!
-    fileprivate var peerHashUUID:[Int:String]!
     fileprivate var thisPeer:Peer!
     fileprivate var room:Room!
     fileprivate var currentBrowserModel:BrowserModel!
-    
-    var getPeer: Peer{
-        get{
-            return thisPeer
-        }
-    }
     
     override init() {
         super.init()
@@ -41,9 +33,7 @@ class ChatModel: NSObject{
         
         room = roomToJoin
         thisPeer = currentBrowserModel.getPeer
-        peerUUIDHash = currentBrowserModel.getPeerUUIDHashDictionary
-        peerHashUUID = currentBrowserModel.getPeerHashUUIDDictionary
-        
+    
         currentBrowserModel.becomeMessageDelegate(self)
     }
     
@@ -140,23 +130,13 @@ class ChatModel: NSObject{
             completion(messages)
         })
     }
-    
-    func addPeer(_ peerHash:Int, peerUUID: String) -> () {
-        
-        //Add peers to both dictionaries
-        peerUUIDHash[peerUUID] = peerHash
-        peerHashUUID[peerHash] = peerUUID
-    }
-    
 
     func lostPeer(_ peerHash:Int, completion: (_ lostPeerInThisRoom: Bool) -> ()){
-        //Remove from both dictionaries
-        guard let uuid = peerHashUUID.removeValue(forKey: peerHash) else{
+        
+        guard let uuid = currentBrowserModel.getPeerUUIDFromHash(peerHash) else{
             completion(false)
             return
         }
-        
-        _ = peerUUIDHash.removeValue(forKey: uuid)
         
         //Check to see if the peer lost was in this room
         BrowserModel.findPeers([uuid], completion: {
@@ -176,13 +156,6 @@ class ChatModel: NSObject{
     
     }
     
-    func getPeerUUIDFromHash(_ peerHash: Int) -> String?{
-        return peerHashUUID[peerHash]
-    }
-    
-    func getPeerHashFromUUID(_ peerUUID: String) -> Int?{
-        return peerUUIDHash[peerUUID]
-    }
     
     func getRoomName() -> String{
         return room.name
@@ -247,12 +220,12 @@ class ChatModel: NSObject{
             }
             
             
-            guard let hashOfPeerAddedToChat = getPeerHashFromUUID(uuidOfPeerAddedToChat) else{
+            guard let hashOfPeerAddedToChat = currentBrowserModel.getPeerHashFromUUID(uuidOfPeerAddedToChat) else{
                 print("Error in ChatModel.handleChatRoomHasBeenUpdated(). Couldn't get the hashID for peer with UUID \(uuidOfPeerAddedToChat)")
                 return
             }
             
-            addPeer(hashOfPeerAddedToChat, peerUUID: uuidOfPeerAddedToChat)
+            //addPeer(hashOfPeerAddedToChat, peerUUID: uuidOfPeerAddedToChat)
             
             OperationQueue.main.addOperation{ () -> Void in
                 //Send notification to ViewController that peer has been added to the Chat. Notice how this needs to be called on the main thread
@@ -305,7 +278,7 @@ extension ChatModel: MPCManagerMessageDelegate {
                 return
             }
             
-            guard let fromPeerUUID = getPeerUUIDFromHash(fromPeerHash) else{
+            guard let fromPeerUUID = currentBrowserModel.getPeerUUIDFromHash(fromPeerHash) else{
                 return
             }
             
